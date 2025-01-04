@@ -1,0 +1,13 @@
+.{
+    .name = "robotron_zig",
+    .version = "0.0.0",
+
+    .dependencies = .{ .@"raylib-zig-bindings" = .{
+        .url = "https://github.com/L-Briand/raylib-zig-bindings/releases/download/1.1.0/release.tar.gz",
+        .hash = "122096dfc8994542d786f21d12806a9bb9bb388d3f731aa03b0cacda0f5c48de2b5c",
+    } },
+
+    .paths = .{
+        "",
+    },
+}
