@@ -4,28 +4,46 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
-const Game = struct { title: [*c]const u8, screen: struct { width: f32, height: f32 } };
+const g = @import("./game.zig");
 
 const Player = struct { name: []const u8, position: struct { x: f32, y: f32 }, speed: f32, dimensions: struct { width: f32, height: f32 } };
+// zig fmt: on
 
 const playerRectColor = rl.Color.init(255, 0, 0, 255);
 // Define an enum for player direction
 const Direction = enum { UP, DOWN, LEFT, RIGHT };
 
 pub fn main() !void {
-    const game = Game{ .title = "Robotron Zig 2024", .screen = .{ .width = 800, .height = 600 } };
-
-    rl.InitWindow(game.screen.width, game.screen.height, game.title);
+    var game = g.Game{ .title = "Robotron Zig 2024", .screen = .{ .width = 0, .height = 0, .updated = false }, .frameCount = 0 };
+    rl.InitWindow(0, 0, game.title);
+    rl.SetWindowState(@intCast(rl.ConfigFlags.FLAG_WINDOW_RESIZABLE.toCInt()));
+    rl.SetWindowMinSize(400, 300);
     defer rl.CloseWindow();
     rl.SetTargetFPS(60);
 
-    var player = Player{ .name = "Robotron", .speed = 5, .position = .{ .x = 0, .y = 0 }, .dimensions = .{ .width = 50, .height = 50 } };
+    const windowBarHeight = estimateTitleBarHeight();
+
+    game.updateScreenSize(@divTrunc((rl.GetMonitorHeight(0) - windowBarHeight) * 4, 3), rl.GetMonitorHeight(0) - windowBarHeight);
+
+    var player = Player{ .name = "Robotron", .speed = 400, .position = .{ .x = 0, .y = 0 }, .dimensions = .{ .width = 20, .height = 40 } };
 
     while (!rl.WindowShouldClose()) {
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.LEFT);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.RIGHT);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.UP);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.DOWN);
+        // if window is resized adjust width based on Height to maintain 4:3
+        if (game.screen.updated) {
+            rl.SetWindowSize(game.screen.width, game.screen.height);
+            game.screen.updated = false;
+        }
+        if (rl.IsWindowResized()) {
+            game.updateScreenSize(@divTrunc(rl.GetRenderHeight() * 4, 3), rl.GetRenderHeight());
+            rl.SetWindowSize(game.screen.width, game.screen.height);
+            game.screen.updated = false;
+        }
+        const deltaTime = rl.GetFrameTime();
+
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.LEFT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.RIGHT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.UP, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.DOWN, deltaTime);
 
         rl.BeginDrawing();
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));
@@ -35,14 +53,31 @@ pub fn main() !void {
 
         rl.EndDrawing();
     }
-
     return;
 }
 
-fn updatePlayerPosition(player: Player, game: Game, direction: Direction) f32 {
-    const speed = player.speed;
-    const width = game.screen.width;
-    const height = game.screen.height;
+fn estimateTitleBarHeight() c_int {
+    const builtin = @import("builtin");
+    switch (builtin.target.os.tag) {
+        .windows => {
+            std.debug.print("Running on Windows\n", .{});
+            return 30;
+        },
+        .macos => {
+            std.debug.print("Running on MAC\n", .{});
+            return 55;
+        },
+        else => {
+            std.debug.print("Unknown OS\n", .{});
+            return 22;
+        },
+    }
+}
+
+fn updatePlayerPosition(player: Player, game: g.Game, direction: Direction, deltaTime: f32) f32 {
+    const speed = player.speed * deltaTime;
+    const width: f32 = @floatFromInt(game.screen.width);
+    const height: f32 = @floatFromInt(game.screen.height);
 
     var oldPosition: f32 = undefined;
 
@@ -70,3 +105,6 @@ fn updatePlayerPosition(player: Player, game: Game, direction: Direction) f32 {
     }
     return oldPosition;
 }
+
+// const ShotDirection = enum { UP, DOWN, LEFT, RIGHT, UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT };
+// const Shots = struct { origin: struct { x: f32, y: f32 }, position: struct { x: f32, y: f32 }, direction: ShotDirection };
