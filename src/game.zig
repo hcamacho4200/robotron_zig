@@ -19,22 +19,22 @@ pub const Game = struct {
 
     pub fn init() Game {
         return Game{ .title = "", 
-        .screen = .{ 
-            .width = 0, 
-            .height = 0, 
-            .updated = false, 
-            .originalHeight = 0, 
-            .scalingFactor = 0 
-        }, 
-        .playerFrame = .{ 
-            .x = 0, 
-            .y = 0, 
-            .height = 0, 
-            .width = 0 
-        }, 
-        .frameCount = 0,
-        .debugInfo = false 
-    };
+            .screen = .{ 
+                .width = 0, 
+                .height = 0, 
+                .updated = false, 
+                .originalHeight = 0, 
+                .scalingFactor = 0 
+            }, 
+            .playerFrame = .{ 
+                .x = 0, 
+                .y = 0, 
+                .height = 0, 
+                .width = 0 
+            }, 
+            .frameCount = 0,
+            .debugInfo = false 
+        };
 // zig fmt: on
     }
     pub fn updateScreenSize(self: *@This(), width: c_int, height: c_int) void {

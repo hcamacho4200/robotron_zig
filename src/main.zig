@@ -4,16 +4,14 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
-const g = @import("./game.zig");
-const mb = @import("./message_box.zig");
+const g = @import("game.zig");
+const mb = @import("message_box.zig");
 const di = @import("debug_info.zig");
+const p = @import("player.zig");
 
-const Player = struct { name: []const u8, position: struct { x: f32, y: f32 }, speed: f32, dimensions: struct { width: f32, height: f32 } };
 // zig fmt: on
 
 const playerRectColor = rl.Color.init(255, 0, 0, 255);
-// Define an enum for player direction
-const Direction = enum { UP, DOWN, LEFT, RIGHT };
 
 pub fn main() !void {
     // var game = g.Game{ .title = "Robotron Zig 2024", .screen = .{ .width = 0, .height = 0, .updated = false }, .frameCount = 0 };
@@ -29,7 +27,7 @@ pub fn main() !void {
 
     game.updateScreenSize(@divTrunc((rl.GetMonitorHeight(0) - windowBarHeight) * 4, 3), rl.GetMonitorHeight(0) - windowBarHeight);
 
-    var player = Player{ .name = "Robotron", .speed = 400, .position = .{ .x = 0, .y = 0 }, .dimensions = .{ .width = 20, .height = 40 } };
+    var player = p.Player.init();
 
     while (!rl.WindowShouldClose()) {
         // if window is resized adjust width based on Height to maintain 4:3
@@ -45,13 +43,13 @@ pub fn main() !void {
         const deltaTime = rl.GetFrameTime();
 
         // Player Movement
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.LEFT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.RIGHT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.UP, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.DOWN, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) player.position.x = p.updatePlayerPosition(player, game, p.Direction.LEFT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) player.position.x = p.updatePlayerPosition(player, game, p.Direction.RIGHT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) player.position.y = p.updatePlayerPosition(player, game, p.Direction.UP, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) player.position.y = p.updatePlayerPosition(player, game, p.Direction.DOWN, deltaTime);
 
         // Debug Info
-        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_APOSTROPHE.toCInt())) {
+        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
             game.debugInfo = !game.debugInfo;
         }
 
@@ -83,38 +81,6 @@ fn estimateTitleBarHeight() c_int {
             return 22;
         },
     }
-}
-
-fn updatePlayerPosition(player: Player, game: g.Game, direction: Direction, deltaTime: f32) f32 {
-    const speed = player.speed * deltaTime;
-    const width: f32 = @floatFromInt(game.screen.width);
-    const height: f32 = @floatFromInt(game.screen.height);
-
-    var oldPosition: f32 = undefined;
-
-    switch (direction) {
-        Direction.LEFT => {
-            oldPosition = player.position.x;
-            const newPosition = player.position.x - speed;
-            if (newPosition > 0) return newPosition;
-        },
-        Direction.RIGHT => {
-            oldPosition = player.position.x;
-            const newPosition = player.position.x + speed;
-            if (newPosition + player.dimensions.width < width) return newPosition;
-        },
-        Direction.UP => {
-            oldPosition = player.position.y;
-            const newPosition = player.position.y - speed;
-            if (newPosition > 0) return newPosition;
-        },
-        Direction.DOWN => {
-            oldPosition = player.position.y;
-            const newPosition = player.position.y + speed;
-            if (newPosition + player.dimensions.height < height) return newPosition;
-        },
-    }
-    return oldPosition;
 }
 
 // const ShotDirection = enum { UP, DOWN, LEFT, RIGHT, UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT };
