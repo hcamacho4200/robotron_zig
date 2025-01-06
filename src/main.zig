@@ -5,6 +5,8 @@ const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
 const g = @import("./game.zig");
+const mb = @import("./message_box.zig");
+const di = @import("debug_info.zig");
 
 const Player = struct { name: []const u8, position: struct { x: f32, y: f32 }, speed: f32, dimensions: struct { width: f32, height: f32 } };
 // zig fmt: on
@@ -14,7 +16,9 @@ const playerRectColor = rl.Color.init(255, 0, 0, 255);
 const Direction = enum { UP, DOWN, LEFT, RIGHT };
 
 pub fn main() !void {
-    var game = g.Game{ .title = "Robotron Zig 2024", .screen = .{ .width = 0, .height = 0, .updated = false }, .frameCount = 0 };
+    // var game = g.Game{ .title = "Robotron Zig 2024", .screen = .{ .width = 0, .height = 0, .updated = false }, .frameCount = 0 };
+    var game = g.Game.init();
+    game.title = "Robotron Zig 2024";
     rl.InitWindow(0, 0, game.title);
     rl.SetWindowState(@intCast(rl.ConfigFlags.FLAG_WINDOW_RESIZABLE.toCInt()));
     rl.SetWindowMinSize(400, 300);
@@ -40,13 +44,20 @@ pub fn main() !void {
         }
         const deltaTime = rl.GetFrameTime();
 
+        // Player Movement
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.LEFT, deltaTime);
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) player.position.x = updatePlayerPosition(player, game, Direction.RIGHT, deltaTime);
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.UP, deltaTime);
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) player.position.y = updatePlayerPosition(player, game, Direction.DOWN, deltaTime);
 
+        // Debug Info
+        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_APOSTROPHE.toCInt())) {
+            game.debugInfo = !game.debugInfo;
+        }
+
         rl.BeginDrawing();
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));
+        try di.handleDisplayDebugInfo(game, deltaTime);
 
         const playerRect = rl.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
         rl.DrawRectangleRec(playerRect, playerRectColor);
