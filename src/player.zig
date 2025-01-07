@@ -43,32 +43,27 @@ pub const Player = struct {
 
 pub fn updatePlayerPosition(player: p.Player, game: g.Game, direction: Direction, deltaTime: f32) f32 {
     const speed = player.scaledSpeed * deltaTime;
-    const width: f32 = game.playerFrame.frameSize.x;
-    const height: f32 = game.playerFrame.frameSize.y;
+    const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
+    const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
 
-    var oldPosition: f32 = undefined;
-
+    var newPosition: f32 = undefined;
     switch (direction) {
         Direction.LEFT => {
-            oldPosition = player.position.x;
-            const newPosition = player.position.x - speed;
-            if (newPosition > game.playerFrame.frameStart.x) return newPosition;
+            newPosition = player.position.x - speed;
+            if (!(newPosition > game.playerFrame.frameStart.x)) newPosition = game.playerFrame.frameStart.x;
         },
         Direction.RIGHT => {
-            oldPosition = player.position.x;
-            const newPosition = player.position.x + speed;
-            if (newPosition + player.dimensions.width < width) return newPosition;
+            newPosition = player.position.x + speed;
+            if (!(newPosition + player.dimensions.width < width)) newPosition = width - player.dimensions.width;
         },
         Direction.UP => {
-            oldPosition = player.position.y;
-            const newPosition = player.position.y - speed;
-            if (newPosition > game.playerFrame.frameStart.y) return newPosition;
+            newPosition = player.position.y - speed;
+            if (!(newPosition > game.playerFrame.frameStart.y)) newPosition = game.playerFrame.frameStart.y;
         },
         Direction.DOWN => {
-            oldPosition = player.position.y;
-            const newPosition = player.position.y + speed;
-            if (newPosition + player.dimensions.height < height) return newPosition;
+            newPosition = player.position.y + speed;
+            if (!(newPosition + player.dimensions.height < height)) newPosition = height - player.dimensions.height;
         },
     }
-    return oldPosition;
+    return newPosition;
 }
