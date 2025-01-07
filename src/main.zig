@@ -71,7 +71,7 @@ pub fn main() !void {
 
         rl.BeginDrawing();
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));
-        try di.handleDisplayDebugInfo(game, deltaTime);
+        try di.handleDisplayDebugInfo(game, player, deltaTime);
 
         const playerRect = rl.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
         rl.DrawRectangleRec(playerRect, playerRectColor);
