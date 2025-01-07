@@ -8,6 +8,7 @@ const g = @import("game.zig");
 const mb = @import("message_box.zig");
 const di = @import("debug_info.zig");
 const p = @import("player.zig");
+const u = @import("util.zig");
 
 // zig fmt: on
 
@@ -33,11 +34,13 @@ pub fn main() !void {
         // if window is resized adjust width based on Height to maintain 4:3
         if (game.screen.updated) {
             rl.SetWindowSize(game.screen.width, game.screen.height);
+            player.updatePlayerScale(game.screen.height);
             game.screen.updated = false;
         }
         if (rl.IsWindowResized()) {
             game.updateScreenSize(@divTrunc(rl.GetRenderHeight() * 4, 3), rl.GetRenderHeight());
             rl.SetWindowSize(game.screen.width, game.screen.height);
+            player.updatePlayerScale(game.screen.height);
             game.screen.updated = false;
         }
         const deltaTime = rl.GetFrameTime();
@@ -52,6 +55,19 @@ pub fn main() !void {
         if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
             game.debugInfo = !game.debugInfo;
         }
+
+        // Update Player Portal (Game Field)
+        game.updateGameField();
+        if (!player.position.valid) {
+            player.position.x = game.playerFrame.frameStart.x;
+            player.position.y = game.playerFrame.frameStart.y;
+            player.position.valid = true;
+        }
+        const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
+        const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
+
+        rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
+        rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
 
         rl.BeginDrawing();
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));

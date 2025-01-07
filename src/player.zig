@@ -9,9 +9,11 @@ pub const Player = struct {
     name: []const u8, 
     position: struct { 
         x: f32, 
-        y: f32 
+        y: f32,
+        valid: bool, 
     }, 
-    speed: f32, 
+    baseSpeed: f32,
+    scaledSpeed: f32, 
     dimensions: struct { 
         width: f32, 
         height: f32 
@@ -19,10 +21,12 @@ pub const Player = struct {
     pub fn init() Player {
         return Player { 
             .name = "Robotron", 
-            .speed = 400, 
+            .baseSpeed = 0,
+            .scaledSpeed = 0, 
             .position = .{ 
                 .x = 0, 
-                .y = 0 
+                .y = 0,
+                .valid = false, 
             }, 
             .dimensions = .{ 
                 .width = 20, 
@@ -30,13 +34,17 @@ pub const Player = struct {
             } 
         };
     }
+
+    pub fn updatePlayerScale(self: *@This(), height: c_int) void {
+        self.scaledSpeed = @as(f32, @floatFromInt(height)) / 3;
+    }
 };
 // zig fmt: on
 
 pub fn updatePlayerPosition(player: p.Player, game: g.Game, direction: Direction, deltaTime: f32) f32 {
-    const speed = player.speed * deltaTime;
-    const width: f32 = @floatFromInt(game.screen.width);
-    const height: f32 = @floatFromInt(game.screen.height);
+    const speed = player.scaledSpeed * deltaTime;
+    const width: f32 = game.playerFrame.frameSize.x;
+    const height: f32 = game.playerFrame.frameSize.y;
 
     var oldPosition: f32 = undefined;
 
@@ -44,7 +52,7 @@ pub fn updatePlayerPosition(player: p.Player, game: g.Game, direction: Direction
         Direction.LEFT => {
             oldPosition = player.position.x;
             const newPosition = player.position.x - speed;
-            if (newPosition > 0) return newPosition;
+            if (newPosition > game.playerFrame.frameStart.x) return newPosition;
         },
         Direction.RIGHT => {
             oldPosition = player.position.x;
@@ -54,7 +62,7 @@ pub fn updatePlayerPosition(player: p.Player, game: g.Game, direction: Direction
         Direction.UP => {
             oldPosition = player.position.y;
             const newPosition = player.position.y - speed;
-            if (newPosition > 0) return newPosition;
+            if (newPosition > game.playerFrame.frameStart.y) return newPosition;
         },
         Direction.DOWN => {
             oldPosition = player.position.y;
