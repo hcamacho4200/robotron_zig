@@ -1,0 +1,16 @@
+- init window with 0
+- determine the height of the display and set 4:3 dimension, update game screen
+- track original display height
+- use original display height to determine scale factor
+- determine player speed
+    - apply scaling factor (assume this will be needed for all entities)
+    - apply scaling to player rectangle
+    - up/down is about 4 secs to cross the game field.
+- make the game field
+    - top padding (percent)
+    - bottom padding (percent)
+    - game field dimensions
+- load a player make it a sprite/texture
+    - attempt to change / animate the colors in the player
+    - tried using pixels, got this to work, but waaaaay too much work
+    - split the texture from the image, had the shader work on anything > 0.0 alpha
