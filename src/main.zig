@@ -78,10 +78,7 @@ pub fn main() !void {
         const deltaTime = rl.GetFrameTime();
 
         // Player Movement
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) player.position.x = p.updatePlayerPosition(player, game, p.Direction.LEFT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) player.position.x = p.updatePlayerPosition(player, game, p.Direction.RIGHT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) player.position.y = p.updatePlayerPosition(player, game, p.Direction.UP, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) player.position.y = p.updatePlayerPosition(player, game, p.Direction.DOWN, deltaTime);
+        player.handlePlayerInput(game, deltaTime);
 
         // Debug Info
         if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {

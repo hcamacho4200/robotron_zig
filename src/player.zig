@@ -1,3 +1,9 @@
+const std = @import("std");
+
+const rlzb = @import("rlzb");
+const rl = rlzb.raylib;
+const rg = rlzb.raygui;
+
 const g = @import("game.zig");
 const b = @import("bullets.zig");
 const p = @import("player.zig");
@@ -42,32 +48,40 @@ pub const Player = struct {
     pub fn updatePlayerScale(self: *@This(), height: c_int) void {
         self.scaledSpeed = @as(f32, @floatFromInt(height)) / 3;
     }
+
+    pub fn handlePlayerInput(self: *@This(), game: g.Game, deltaTime: f32) void {
+        // Player Movement
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.LEFT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.RIGHT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.UP, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.DOWN, deltaTime);
+    }
+
+    pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) f32 {
+        const speed = self.scaledSpeed * deltaTime;
+        const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
+        const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
+
+        var newPosition: f32 = undefined;
+        switch (direction) {
+            Direction.LEFT => {
+                newPosition = self.position.x - speed;
+                if (!(newPosition > game.playerFrame.frameStart.x)) newPosition = game.playerFrame.frameStart.x;
+            },
+            Direction.RIGHT => {
+                newPosition = self.position.x + speed;
+                if (!(newPosition + self.dimensions.width < width)) newPosition = width - self.dimensions.width;
+            },
+            Direction.UP => {
+                newPosition = self.position.y - speed;
+                if (!(newPosition > game.playerFrame.frameStart.y)) newPosition = game.playerFrame.frameStart.y;
+            },
+            Direction.DOWN => {
+                newPosition = self.position.y + speed;
+                if (!(newPosition + self.dimensions.height < height)) newPosition = height - self.dimensions.height;
+            },
+        }
+        return newPosition;
+    }
 };
 // zig fmt: on
-
-pub fn updatePlayerPosition(player: p.Player, game: g.Game, direction: Direction, deltaTime: f32) f32 {
-    const speed = player.scaledSpeed * deltaTime;
-    const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
-    const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
-
-    var newPosition: f32 = undefined;
-    switch (direction) {
-        Direction.LEFT => {
-            newPosition = player.position.x - speed;
-            if (!(newPosition > game.playerFrame.frameStart.x)) newPosition = game.playerFrame.frameStart.x;
-        },
-        Direction.RIGHT => {
-            newPosition = player.position.x + speed;
-            if (!(newPosition + player.dimensions.width < width)) newPosition = width - player.dimensions.width;
-        },
-        Direction.UP => {
-            newPosition = player.position.y - speed;
-            if (!(newPosition > game.playerFrame.frameStart.y)) newPosition = game.playerFrame.frameStart.y;
-        },
-        Direction.DOWN => {
-            newPosition = player.position.y + speed;
-            if (!(newPosition + player.dimensions.height < height)) newPosition = height - player.dimensions.height;
-        },
-    }
-    return newPosition;
-}
