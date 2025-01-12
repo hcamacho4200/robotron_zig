@@ -113,22 +113,29 @@ pub fn main() !void {
 
         // Draw the playfield
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));
+
+        rl.BeginShaderMode(playerDownCropShader);
         rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
+        rl.EndShaderMode();
+
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
-
-        // Handle debugging info
-        try di.handleDisplayDebugInfo(game, player, deltaTime);
-
-        // Handle Player Glasses Color
-
         rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
 
         rl.BeginShaderMode(playerDownCropShader);
         rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
         rl.EndShaderMode();
 
+        // Handle debugging info
+        try di.handleDisplayDebugInfo(game, player, deltaTime);
+
         rl.EndDrawing();
     }
+    // const len = @typeInfo(BulletDirection).Enum.fields.len;
+    // std.log.info("{}", .{len});
+    // for (0..len) |num| {
+    //     std.log.info("{} {}", .{ num, @as(BulletDirection, @enumFromInt(num)) });
+    // }
+
     return;
 }
 
@@ -149,6 +156,3 @@ fn estimateTitleBarHeight() c_int {
         },
     }
 }
-
-// const ShotDirection = enum { UP, DOWN, LEFT, RIGHT, UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT };
-// const Shots = struct { origin: struct { x: f32, y: f32 }, position: struct { x: f32, y: f32 }, direction: ShotDirection };

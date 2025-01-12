@@ -1,4 +1,5 @@
 const g = @import("game.zig");
+const b = @import("bullets.zig");
 const p = @import("player.zig");
 
 // Define an enum for player direction
@@ -18,6 +19,8 @@ pub const Player = struct {
         width: f32, 
         height: f32 
     },
+    bullets: b.Bullets,
+
     pub fn init() Player {
         return Player { 
             .name = "Robotron", 
@@ -31,7 +34,8 @@ pub const Player = struct {
             .dimensions = .{ 
                 .width = 20, 
                 .height = 40 
-            } 
+            },
+            .bullets = b.Bullets.init() 
         };
     }
 
