@@ -55,6 +55,27 @@ pub const Player = struct {
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.RIGHT, deltaTime);
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.UP, deltaTime);
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.DOWN, deltaTime);
+
+        // Player Shooting
+        var shootingDirection: b.BulletDirection = b.BulletDirection.IDLE;
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = b.BulletDirection.UP_LEFT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = b.BulletDirection.UP_RIGHT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = b.BulletDirection.IDLE
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = b.BulletDirection.UP
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = b.BulletDirection.DOWN_LEFT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = b.BulletDirection.DOWN_RIGHT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = b.BulletDirection.IDLE
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = b.BulletDirection.DOWN
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = b.BulletDirection.LEFT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = b.BulletDirection.RIGHT
+        else shootingDirection = b.BulletDirection.IDLE;
+
+        if (shootingDirection != b.BulletDirection.IDLE) {
+            std.log.info("shootingDirection {} ", .{shootingDirection});
+            shootingDirection = b.BulletDirection.IDLE;
+        }
+  
+    
     }
 
     pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) f32 {

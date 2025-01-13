@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const BulletDirection = enum { UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT };
+pub const BulletDirection = enum { UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT, IDLE };
 
 pub const BulletShootingState = struct {
     direction: BulletDirection,
