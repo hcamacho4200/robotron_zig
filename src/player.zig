@@ -5,7 +5,7 @@ const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
 const g = @import("game.zig");
-const b = @import("bullets.zig");
+const s = @import("shooting.zig");
 const p = @import("player.zig");
 
 // Define an enum for player direction
@@ -25,7 +25,7 @@ pub const Player = struct {
         width: f32, 
         height: f32 
     },
-    bullets: b.Bullets,
+    shootingMaster: s.ShootingMaster,
 
     pub fn init() Player {
         return Player { 
@@ -41,15 +41,16 @@ pub const Player = struct {
                 .width = 20, 
                 .height = 40 
             },
-            .bullets = b.Bullets.init() 
+            .shootingMaster = s.ShootingMaster.init() 
         };
     }
 
     pub fn updatePlayerScale(self: *@This(), height: c_int) void {
         self.scaledSpeed = @as(f32, @floatFromInt(height)) / 3;
+        self.shootingMaster.scaledSpeed = @as(f32, @floatFromInt(height)) / 0.25;
     }
 
-    pub fn handlePlayerInput(self: *@This(), game: g.Game, deltaTime: f32) void {
+    pub fn handlePlayerInput(self: *@This(), game: g.Game, deltaTime: f32) !void {
         // Player Movement
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.LEFT, deltaTime);
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.RIGHT, deltaTime);
@@ -57,25 +58,40 @@ pub const Player = struct {
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.DOWN, deltaTime);
 
         // Player Shooting
-        var shootingDirection: b.BulletDirection = b.BulletDirection.IDLE;
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = b.BulletDirection.UP_LEFT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = b.BulletDirection.UP_RIGHT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = b.BulletDirection.IDLE
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = b.BulletDirection.UP
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = b.BulletDirection.DOWN_LEFT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = b.BulletDirection.DOWN_RIGHT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = b.BulletDirection.IDLE
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = b.BulletDirection.DOWN
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = b.BulletDirection.LEFT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = b.BulletDirection.RIGHT
-        else shootingDirection = b.BulletDirection.IDLE;
+        var shootingDirection: s.ShootDirection = s.ShootDirection.IDLE;
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.UP_LEFT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.UP_RIGHT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.IDLE
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.UP
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.DOWN_LEFT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.DOWN_RIGHT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.IDLE
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.DOWN
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.LEFT
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.RIGHT
+        else shootingDirection = s.ShootDirection.IDLE;
 
-        if (shootingDirection != b.BulletDirection.IDLE) {
-            std.log.info("shootingDirection {} ", .{shootingDirection});
-            shootingDirection = b.BulletDirection.IDLE;
-        }
-  
-    
+        if (shootingDirection != s.ShootDirection.IDLE) {
+            if (self.shootingMaster.canShoot(shootingDirection)) {
+                const shootingDirectionStatus = self.shootingMaster.shootingDirectionStates[@intFromEnum(shootingDirection)]; 
+                std.log.info("shootingDirection {} {d} {} {} ", .{
+                    shootingDirection, 
+                    std.time.milliTimestamp(), 
+                    shootingDirectionStatus.timeSinceLastShot, 
+                    shootingDirectionStatus.numActiveBullets
+                });
+                try self.shootingMaster.takeShot(shootingDirection, rl.Vector2.init(self.position.x, self.position.y));
+            }
+            shootingDirection = s.ShootDirection.IDLE;
+        }   
+    }
+
+    pub fn handlePlayerShots(self: *@This(), game: g.Game, deltaTime: f32) void {
+        self.shootingMaster.updateShots(game, deltaTime);
+    }
+
+    pub fn drawShots(self: *@This()) void {
+        self.shootingMaster.drawShots();
     }
 
     pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) f32 {

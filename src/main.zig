@@ -78,7 +78,10 @@ pub fn main() !void {
         const deltaTime = rl.GetFrameTime();
 
         // Player Movement
-        player.handlePlayerInput(game, deltaTime);
+        try player.handlePlayerInput(game, deltaTime);
+
+        // Player Shooting
+        player.handlePlayerShots(game, deltaTime);
 
         // Debug Info
         if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
@@ -122,17 +125,14 @@ pub fn main() !void {
         rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
         rl.EndShaderMode();
 
+        // Draw the bullets
+        player.drawShots();
+
         // Handle debugging info
         try di.handleDisplayDebugInfo(game, player, deltaTime);
 
         rl.EndDrawing();
     }
-    // const len = @typeInfo(BulletDirection).Enum.fields.len;
-    // std.log.info("{}", .{len});
-    // for (0..len) |num| {
-    //     std.log.info("{} {}", .{ num, @as(BulletDirection, @enumFromInt(num)) });
-    // }
-
     return;
 }
 
