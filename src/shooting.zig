@@ -67,8 +67,8 @@ pub const ShootingMaster = struct {
 
         shootingMaster.minShotTime = 100;
         shootingMaster.maxActiveShotsPer = 4;
-        shootingMaster.minDistanceForTail = 20;
-        shootingMaster.shotLength = 60;
+        shootingMaster.minDistanceForTail = 38.7;
+        shootingMaster.shotLength = 50;
 
         return shootingMaster;
     }
