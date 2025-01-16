@@ -116,7 +116,6 @@ pub const Player = struct {
     pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) void {
         const speed = self.scaledSpeed * deltaTime;
 
-        
         const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
         const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
 

@@ -68,7 +68,7 @@ pub const ShootingMaster = struct {
         shootingMaster.minShotTime = 100;
         shootingMaster.maxActiveShotsPer = 4;
         shootingMaster.minDistanceForTail = 20;
-        shootingMaster.shotLength = 40;
+        shootingMaster.shotLength = 60;
 
         return shootingMaster;
     }
@@ -187,14 +187,24 @@ pub const ShootingMaster = struct {
         std.log.info("unable to shoot", .{});
     }
 
+    /// Handle drawing shots to the screen
+    /// - loop through all the shots
+    /// - consider only active shots
+    /// - compute the distance thus traveled from the origin and enable drawing only for those shots that have traveled minDistance
+    /// - determine if the tail needs to be truncated, otherwise draw at shotLength
     pub fn drawShots(self: *@This()) void {
         for (self.shots[0..]) |*shot| {
             if (shot.active) {
-                shot.drawStart = u.calculatePointOnLine(shot.drawEnd, shot.origin, 20);
+                var adjShotLength: f32 = undefined;
+                const distanceFromOrigin = u.calculateDistance(shot.drawEnd, shot.origin);
+                if (distanceFromOrigin > self.minDistanceForTail) {
+                    adjShotLength = if (distanceFromOrigin - self.minDistanceForTail < self.shotLength)
+                        distanceFromOrigin - self.minDistanceForTail
+                    else
+                        self.shotLength;
+                }
+                shot.drawStart = u.calculatePointOnLine(shot.drawEnd, shot.origin, adjShotLength);
                 rl.DrawLineEx(shot.drawStart, shot.drawEnd, 5, rl.Color.init(255, 255, 255, 255));
-
-                // const shotCenter = rl.Vector2.init(shot.drawEnd.x, shot.drawEnd.y);
-                // rl.DrawCircleV(shotCenter, 10, rl.Color.init(255, 255, 255, 255));
             }
         }
     }
