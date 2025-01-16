@@ -127,7 +127,8 @@ pub const ShootingMaster = struct {
                 if (remove) {
                     shot.active = false;
                     self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
-                    std.log.info("removing shot {}", .{shot});
+                    const activeShots = self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets;
+                    std.log.info("removing shot {} {}", .{ activeShots, shot });
                 }
             }
         }
@@ -158,8 +159,9 @@ pub const ShootingMaster = struct {
 
         for (self.shots[0..]) |*shot| {
             if (!shot.active) {
+                const activeShots = self.shootingDirectionStates[@intFromEnum(direction)].numActiveBullets;
                 shot.* = Shot.init(direction, origin);
-                std.log.info("added shot {}", .{shot});
+                std.log.info("added shot {} {}", .{ activeShots, shot });
                 return;
             }
         }
@@ -168,8 +170,10 @@ pub const ShootingMaster = struct {
 
     pub fn drawShots(self: *@This()) void {
         for (self.shots[0..]) |*shot| {
-            const shotCenter = rl.Vector2.init(shot.drawEnd.x, shot.drawEnd.y);
-            rl.DrawCircleV(shotCenter, 10, rl.Color.init(255, 255, 255, 255));
+            if (shot.active) {
+                const shotCenter = rl.Vector2.init(shot.drawEnd.x, shot.drawEnd.y);
+                rl.DrawCircleV(shotCenter, 10, rl.Color.init(255, 255, 255, 255));
+            }
         }
     }
 };

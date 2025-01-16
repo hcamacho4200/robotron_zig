@@ -18,6 +18,10 @@ pub const Player = struct {
         x: f32, 
         y: f32,
         valid: bool, 
+    },
+    center: struct {
+        x:f32,
+        y:f32,
     }, 
     baseSpeed: f32,
     scaledSpeed: f32, 
@@ -36,6 +40,10 @@ pub const Player = struct {
                 .x = 0, 
                 .y = 0,
                 .valid = false, 
+            },
+            .center =  .{
+                .x = 0,
+                .y = 0,
             }, 
             .dimensions = .{ 
                 .width = 20, 
@@ -47,15 +55,15 @@ pub const Player = struct {
 
     pub fn updatePlayerScale(self: *@This(), height: c_int) void {
         self.scaledSpeed = @as(f32, @floatFromInt(height)) / 3;
-        self.shootingMaster.scaledSpeed = @as(f32, @floatFromInt(height)) / 0.25;
+        self.shootingMaster.scaledSpeed = @as(f32, @floatFromInt(height)) / 0.5;
     }
 
     pub fn handlePlayerInput(self: *@This(), game: g.Game, deltaTime: f32) !void {
         // Player Movement
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.LEFT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.position.x = self.updatePlayerPosition(game, p.Direction.RIGHT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.UP, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.position.y = self.updatePlayerPosition(game, p.Direction.DOWN, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.updatePlayerPosition(game, p.Direction.LEFT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.updatePlayerPosition(game, p.Direction.RIGHT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.updatePlayerPosition(game, p.Direction.UP, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.updatePlayerPosition(game, p.Direction.DOWN, deltaTime);
 
         // Player Shooting
         var shootingDirection: s.ShootDirection = s.ShootDirection.IDLE;
@@ -80,7 +88,7 @@ pub const Player = struct {
                     shootingDirectionStatus.timeSinceLastShot, 
                     shootingDirectionStatus.numActiveBullets
                 });
-                try self.shootingMaster.takeShot(shootingDirection, rl.Vector2.init(self.position.x, self.position.y));
+                try self.shootingMaster.takeShot(shootingDirection, rl.Vector2.init(self.center.x, self.center.y));
             }
             shootingDirection = s.ShootDirection.IDLE;
         }   
@@ -94,31 +102,35 @@ pub const Player = struct {
         self.shootingMaster.drawShots();
     }
 
-    pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) f32 {
+    pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) void {
         const speed = self.scaledSpeed * deltaTime;
         const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
         const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
 
-        var newPosition: f32 = undefined;
         switch (direction) {
             Direction.LEFT => {
-                newPosition = self.position.x - speed;
-                if (!(newPosition > game.playerFrame.frameStart.x)) newPosition = game.playerFrame.frameStart.x;
+                const newPosition = self.position.x - speed;
+                self.position.x = if ((newPosition > game.playerFrame.frameStart.x)) newPosition else game.playerFrame.frameStart.x;
             },
             Direction.RIGHT => {
-                newPosition = self.position.x + speed;
-                if (!(newPosition + self.dimensions.width < width)) newPosition = width - self.dimensions.width;
+                const newPosition = self.position.x + speed;
+                std.log.info("RIGHT {d} {d} {d} {d}", .{self.position.x, newPosition, newPosition + self.dimensions.width, width});
+                self.position.x = if ((newPosition + self.dimensions.width < width)) newPosition else width - self.dimensions.width;
             },
             Direction.UP => {
-                newPosition = self.position.y - speed;
-                if (!(newPosition > game.playerFrame.frameStart.y)) newPosition = game.playerFrame.frameStart.y;
+                const newPosition = self.position.y - speed;
+                self.position.y = if ((newPosition > game.playerFrame.frameStart.y)) newPosition else game.playerFrame.frameStart.y;
+
             },
             Direction.DOWN => {
-                newPosition = self.position.y + speed;
-                if (!(newPosition + self.dimensions.height < height)) newPosition = height - self.dimensions.height;
+                const newPosition = self.position.y + speed;
+                self.position.y = if ((newPosition + self.dimensions.height < height)) newPosition else height - self.dimensions.height;
             },
         }
-        return newPosition;
+
+        // Update Player Center.
+        self.center.x = self.position.x + self.dimensions.width / 2;
+        self.center.y = self.position.y + self.dimensions.height / 2;
     }
 };
 // zig fmt: on
