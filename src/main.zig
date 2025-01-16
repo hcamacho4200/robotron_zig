@@ -91,8 +91,7 @@ pub fn main() !void {
         // Update Player Portal (Game Field)
         game.updateGameField();
         if (!player.position.valid) {
-            player.position.x = game.playerFrame.frameStart.x;
-            player.position.y = game.playerFrame.frameStart.y;
+            player.setPlayerPosition(game.playerFrame.frameSize.x / 2 - player.dimensions.width / 2, game.playerFrame.frameSize.y / 2 - player.dimensions.height / 2);
             player.position.valid = true;
         }
         const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);

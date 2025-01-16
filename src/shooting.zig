@@ -121,8 +121,15 @@ pub const ShootingMaster = struct {
                 var remove: bool = false;
 
                 shot.drawEnd = u.vector2Add(shot.drawEnd, offsetV2);
-                if (shot.drawEnd.x < 0 or shot.drawEnd.x > @as(f32, @floatFromInt(game.screen.width))) remove = true;
-                if (shot.drawEnd.y < 0 or shot.drawEnd.y > @as(f32, @floatFromInt(game.screen.height))) remove = true;
+                const playerFrameDimensions: rl.Vector4 = .{
+                    .x = game.playerFrame.frameStart.x,
+                    .y = game.playerFrame.frameStart.y,
+                    .z = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x,
+                    .w = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y,
+                };
+
+                if (shot.drawEnd.x < playerFrameDimensions.x or shot.drawEnd.x > playerFrameDimensions.z) remove = true;
+                if (shot.drawEnd.y < playerFrameDimensions.y or shot.drawEnd.y > playerFrameDimensions.w) remove = true;
 
                 if (remove) {
                     shot.active = false;
