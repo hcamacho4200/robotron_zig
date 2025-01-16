@@ -41,6 +41,9 @@ pub const ShootingMaster = struct {
     minShotTime: u64,
     maxActiveShotsPer: u32,
     scaledSpeed: f32,
+    // distance the end must travel before the tail is drawn.
+    minDistanceForTail: f32,
+    shotLength: f32,
 
     pub fn init() ShootingMaster {
 
@@ -64,8 +67,54 @@ pub const ShootingMaster = struct {
 
         shootingMaster.minShotTime = 100;
         shootingMaster.maxActiveShotsPer = 4;
+        shootingMaster.minDistanceForTail = 20;
+        shootingMaster.shotLength = 40;
 
         return shootingMaster;
+    }
+
+    pub fn buildShotDirection(self: *@This(), direction: ShootDirection) rl.Vector2 {
+        _ = self;
+
+        var offset_x: f32 = undefined;
+        var offset_y: f32 = undefined;
+
+        switch (direction) {
+            .UP => {
+                offset_x = 0;
+                offset_y = -1;
+            },
+            .UP_LEFT => {
+                offset_x = -1;
+                offset_y = -1;
+            },
+            .UP_RIGHT => {
+                offset_x = 1;
+                offset_y = -1;
+            },
+            .DOWN => {
+                offset_x = 0;
+                offset_y = 1;
+            },
+            .DOWN_LEFT => {
+                offset_x = -1;
+                offset_y = 1;
+            },
+            .DOWN_RIGHT => {
+                offset_x = 1;
+                offset_y = 1;
+            },
+            .LEFT => {
+                offset_x = -1;
+                offset_y = 0;
+            },
+            .RIGHT => {
+                offset_x = 1;
+                offset_y = 0;
+            },
+            .IDLE => {},
+        }
+        return rl.Vector2.init(offset_x, offset_y);
     }
 
     /// Update Shots
@@ -76,48 +125,11 @@ pub const ShootingMaster = struct {
     /// - develop start and end vectors
     /// - drawlineEx from start to end.
     pub fn updateShots(self: *@This(), game: g.Game, deltaTime: f32) void {
-        var offset_x: f32 = undefined;
-        var offset_y: f32 = undefined;
-
         for (self.shots[0..]) |*shot| {
-            switch (shot.direction) {
-                .UP => {
-                    offset_x = 0;
-                    offset_y = -1;
-                },
-                .UP_LEFT => {
-                    offset_x = -1;
-                    offset_y = -1;
-                },
-                .UP_RIGHT => {
-                    offset_x = 1;
-                    offset_y = -1;
-                },
-                .DOWN => {
-                    offset_x = 0;
-                    offset_y = 1;
-                },
-                .DOWN_LEFT => {
-                    offset_x = -1;
-                    offset_y = 1;
-                },
-                .DOWN_RIGHT => {
-                    offset_x = 1;
-                    offset_y = 1;
-                },
-                .LEFT => {
-                    offset_x = -1;
-                    offset_y = 0;
-                },
-                .RIGHT => {
-                    offset_x = 1;
-                    offset_y = 0;
-                },
-                .IDLE => {},
-            }
             if (shot.active) {
                 const speed = self.scaledSpeed * deltaTime;
-                const offsetV2 = rl.Vector2.init(offset_x * speed, offset_y * speed);
+                const shotDirectionV = self.buildShotDirection(shot.direction);
+                const offsetV2 = rl.Vector2.init(shotDirectionV.x * speed, shotDirectionV.y * speed);
                 var remove: bool = false;
 
                 shot.drawEnd = u.vector2Add(shot.drawEnd, offsetV2);
@@ -178,8 +190,11 @@ pub const ShootingMaster = struct {
     pub fn drawShots(self: *@This()) void {
         for (self.shots[0..]) |*shot| {
             if (shot.active) {
-                const shotCenter = rl.Vector2.init(shot.drawEnd.x, shot.drawEnd.y);
-                rl.DrawCircleV(shotCenter, 10, rl.Color.init(255, 255, 255, 255));
+                shot.drawStart = u.calculatePointOnLine(shot.drawEnd, shot.origin, 20);
+                rl.DrawLineEx(shot.drawStart, shot.drawEnd, 5, rl.Color.init(255, 255, 255, 255));
+
+                // const shotCenter = rl.Vector2.init(shot.drawEnd.x, shot.drawEnd.y);
+                // rl.DrawCircleV(shotCenter, 10, rl.Color.init(255, 255, 255, 255));
             }
         }
     }

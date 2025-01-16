@@ -32,7 +32,7 @@ test "calculateDistance should return 5" {
     expect(actual == 5);
 }
 
-fn calculatePointOnLine(end: rl.Vector2, origin: rl.Vector2, distance: f32) rl.Vector2 {
+pub fn calculatePointOnLine(end: rl.Vector2, origin: rl.Vector2, distance: f32) rl.Vector2 {
     const direction = rl.Vector2{
         .x = origin.x - end.x,
         .y = origin.y - end.y,
