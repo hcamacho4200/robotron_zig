@@ -1,0 +1,5 @@
+{
+    "zig.linter.rules": {
+        "struct_definition_style": "multiple_lines"  // or "single_line" to disable this rule
+    },
+}

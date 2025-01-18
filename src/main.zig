@@ -10,10 +10,15 @@ const mb = @import("message_box.zig");
 const di = @import("debug_info.zig");
 const p = @import("player.zig");
 const u = @import("util.zig");
+const l = @import("levels.zig");
 
 // zig fmt: on
 
 const playerRectColor = rl.Color.init(255, 0, 0, 255);
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}
 
 pub fn main() !void {
     var game = g.Game.init();
@@ -23,6 +28,9 @@ pub fn main() !void {
     rl.SetWindowMinSize(400, 300);
     defer rl.CloseWindow();
     rl.SetTargetFPS(60);
+
+    const testing = l.ActorType.DIAMOND;
+    _ = testing;
 
     const windowBarHeight = estimateTitleBarHeight();
 
@@ -37,7 +45,6 @@ pub fn main() !void {
     const frameRec = rl.Rectangle.init(0.0, 0.0, playerDownCropTexture_width, playerDownCropTexture_height);
     player.dimensions.width = playerDownCropTexture_width;
     player.dimensions.height = playerDownCropTexture_height;
-
     const playerDownCropShader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
 
     const image = rl.LoadImageFromTexture(playerDownCropTexture);
@@ -48,6 +55,9 @@ pub fn main() !void {
     // const robotron_yellow = [4]f32{ 233.0 / 255.0, 233.0 / 255.0, 0.0, 255.0 / 255.0 };
     const robotron_green = [4]f32{ 19.0 / 255.0, 236.0 / 255.0, 0.0 / 255.0, 255.0 / 255.0 };
     const robotron_blue = [4]f32{ 0.0 / 255.0, 0.0 / 255.0, 250.0 / 255.0, 255.0 / 255.0 };
+
+    // load sprite star
+    const spriteStarTexture = rl.LoadTexture("resources/textures/sprite-star.png");
 
     // zig fmt: off
     const PlayerGlassesColorStatus = struct { 
@@ -119,6 +129,8 @@ pub fn main() !void {
 
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
         rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
+
+        rl.DrawTextureV(spriteStarTexture, rl.Vector2.init(0, 0), rl.WHITE);
 
         rl.BeginShaderMode(playerDownCropShader);
         rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);

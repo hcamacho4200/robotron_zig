@@ -1,0 +1,63 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build Zig",
+        "type": "shell",
+        "command": "zig",
+        "args": [
+          "build",
+          "--build-file",
+          "build.zig"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [
+            {
+                "owner": "zig",
+                "fileLocation": ["relative", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.*\\.zig):(\\d+):(\\d+): error: (.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "message": 4
+                },
+            }
+        ]
+      },
+      {
+        "label": "Run Zig Unit Tests",
+        "type": "shell",
+        "command": "zig",
+        "args": ["build", "test"],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        },
+        "problemMatcher": [
+          {
+              "owner": "zig",
+              "fileLocation": ["relative", "${workspaceFolder}"],
+              "pattern": {
+                  "regexp": "^.*(src.*\\.zig):(\\d+):(\\d+): (.*)$",
+                  "file": 1,
+                  "line": 2,
+                  "column": 3,
+                  "message": 4
+              },
+          }
+        ]
+      },
+      {
+        "label": "Prelaunch Tasks",
+        "dependsOn": [
+          "Build Zig",
+          "Run Zig Unit Tests"
+        ],
+        "dependsOrder": "sequence"
+      }
+    ]
+  }

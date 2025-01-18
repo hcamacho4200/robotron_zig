@@ -25,11 +25,11 @@ pub fn calculateDistance(a: rl.Vector2, b: rl.Vector2) f32 {
 }
 
 test "calculateDistance should return 5" {
-    const v1 = rl.Vector2(0, 0);
-    const v2 = rl.Vector2(3, 4);
+    const v1 = rl.Vector2.init(0, 0);
+    const v2 = rl.Vector2.init(3, 4);
 
     const actual = calculateDistance(v1, v2);
-    expect(actual == 5);
+    try expect(actual == 5);
 }
 
 pub fn calculatePointOnLine(end: rl.Vector2, origin: rl.Vector2, distance: f32) rl.Vector2 {

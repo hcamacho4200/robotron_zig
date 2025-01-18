@@ -14,3 +14,21 @@
     - attempt to change / animate the colors in the player
     - tried using pixels, got this to work, but waaaaay too much work
     - split the texture from the image, had the shader work on anything > 0.0 alpha
+- shooting
+    - need to track 8 directions
+    - limit to 4 bullets active in each direction, 32 active bullets in theory
+    - bullet speed
+    - each bullet
+        - start pos (Vec2)
+        - direction
+        - current Pos (Vec2)
+        - origin is the center of the player at the time of shot.
+    - draw the bullet
+        - a series of lines from drawEnd to drawStart
+        - drawEnd is the front of the shot
+- sprites
+    - create an enum for the sprites
+    - create an actor structure with the topleft and lower right rectangle coordinates
+    - position using the center position and set the RTL and RBR with a function
+
+        
