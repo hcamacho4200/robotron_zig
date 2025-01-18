@@ -1,5 +1,4 @@
 const std = @import("std");
-// Import the project from zon file.
 const rlzb = @import("raylib-zig-bindings");
 
 pub fn build(b: *std.Build) !void {
@@ -61,4 +60,25 @@ pub fn build(b: *std.Build) !void {
     }
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+
+    var tests = b.addTest(.{
+        .name = "robotron_test_zig",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    tests.root_module.addImport("rlzb", bindings.module("raylib-zig-bindings"));
+    switch (target.result.os.tag) {
+        .windows => try setup.linkWindows(b, tests),
+        .macos => try setup.linkMacos(b, tests),
+        .linux => try setup.linkLinux(b, tests, .{ .platform = .DESKTOP, .backend = .X11 }),
+        else => @panic("Unsupported os"),
+    }
+    setup.finalize(b, tests);
+    b.installArtifact(tests);
+    setup.setRayguiOptions(b, tests, .{});
+
+    const test_step = b.step("test", "Tests");
+    test_step.dependOn(&b.addRunArtifact(tests).step);
 }
