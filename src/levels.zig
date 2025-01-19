@@ -75,10 +75,12 @@ test "This is a test" {
     const d1 = Diamond.init();
     const d2 = Diamond.init();
 
-    var test_actors: [2]ActorInterface = [_]ActorInterface{ d1.interface, d2.interface };
+    comptime var test_actors: [2]ActorInterface = undefined;
+    test_actors[0] = d1.interface;
+    test_actors[1] = d2.interface;
 
-    for (test_actors[0..]) |actor| {
-        std.log.info("{}", .{actor});
+    for (test_actors) |actor, index| {
+        std.log.info("Actor at index {d}: {}", .{index, actor});
     }
     try expect(false);
 }
