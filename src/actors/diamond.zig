@@ -6,14 +6,12 @@ const SpriteInterface = @import("interfaces.zig").SpriteInterface;
 pub const Diamond = struct {
     x: f32,
     y: f32,
-    active: bool,
     actor_interface: ActorInterface,
 
     pub fn init(x: f32, y: f32) Diamond {
         return Diamond{
             .x = x,
             .y = y,
-            .active = true,
             .actor_interface = ActorInterface{ .sprite = SpriteInterface{ .handleDraw = handleDraw, .handleUpdate = handleUpdate } },
         };
     }
@@ -26,10 +24,10 @@ pub const Diamond = struct {
 
 pub fn handleDraw(self: *anyopaque) void {
     const diamond: *Diamond = @alignCast(@ptrCast(self));
-    std.debug.print("Diamond draw {} {d} {}\n", .{ self, diamond.x, diamond.active });
+    std.debug.print("Diamond draw {} {d}\n", .{ self, diamond.x });
 }
 
 pub fn handleUpdate(self: *anyopaque) void {
     const diamond: *Diamond = @alignCast(@ptrCast(self));
-    std.debug.print("Diamond update {} {d} {}\n", .{ self, diamond.x, diamond.active });
+    std.debug.print("Diamond update {} {d}\n", .{ self, diamond.x });
 }

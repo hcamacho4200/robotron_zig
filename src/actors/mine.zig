@@ -6,14 +6,12 @@ const SpriteInterface = @import("interfaces.zig").SpriteInterface;
 pub const Mine = struct {
     x: f32,
     y: f32,
-    active: bool,
     actor_interface: ActorInterface,
 
     pub fn init(x: f32, y: f32) Mine {
         return Mine{
             .x = x,
             .y = y,
-            .active = true,
             .actor_interface = ActorInterface{ .sprite = SpriteInterface{ .handleDraw = handleDraw, .handleUpdate = handleUpdate } },
         };
     }
@@ -26,10 +24,10 @@ pub const Mine = struct {
 
 pub fn handleDraw(self: *anyopaque) void {
     const mine: *Mine = @alignCast(@ptrCast(self));
-    std.debug.print("Mine draw {} {d} {}\n", .{ self, mine.x, mine.active });
+    std.debug.print("Mine draw {} {d}\n", .{ self, mine.x });
 }
 
 pub fn handleUpdate(self: *anyopaque) void {
     const mine: *Mine = @alignCast(@ptrCast(self));
-    std.debug.print("Mine Update {} {d} {}\n", .{ self, mine.x, mine.active });
+    std.debug.print("Mine Update {} {d}\n", .{ self, mine.x });
 }

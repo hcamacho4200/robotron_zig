@@ -82,36 +82,5 @@ test "This is a test" {
     actor_master.addActor(Actor{ .mine = Mine.init(0, 0) });
     actor_master.listActive();
     actor_master.handleUpdate();
-
-    switch (actor_master.actors[0]) {
-        .diamond => {
-            actor_master.actors[0].diamond.actor_interface.sprite.handleDraw(&actor_master.actors[0]);
-        },
-        .mine => {},
-        else => {
-            std.debug.print("ignore ", .{});
-        },
-    }
-
     try expect(true);
-
-    // var shape_d1 = Shape{ .diamond = Diamond{ .x = 100, .y = 200, .active = true } };
-    // shape_d1.diamond.setPosition(50, 50);
-    // std.debug.print("\n{}\n", .{shape_d1});
-
-    // var shape_m1 = Shape{ .mine = Mine{ .x = 100, .y = 200, .active = true } };
-    // shape_m1.mine.setPosition(51, 51);
-    // std.debug.print("{}\n", .{shape_m1});
-
-    // var shape_s1 = Shape{ .star = Star{ .x = 100, .y = 200, .active = true } };
-    // shape_s1.star.setPosition(51, 51);
-    // std.debug.print("{}\n", .{shape_s1});
-
-    // for (shapes[0..]) |*shape| {
-    //     shape.* = Shape{ .empty = Empty.init() };
-    // }
-
-    // for (shapes) |shape| {
-    //     std.debug.print("  {}\n", .{shape});
-    // }
 }
