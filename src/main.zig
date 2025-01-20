@@ -29,9 +29,6 @@ pub fn main() !void {
     defer rl.CloseWindow();
     rl.SetTargetFPS(60);
 
-    const testing = l.ActorType.DIAMOND;
-    _ = testing;
-
     const windowBarHeight = estimateTitleBarHeight();
 
     game.updateScreenSize(@divTrunc((rl.GetMonitorHeight(0) - windowBarHeight) * 4, 3), rl.GetMonitorHeight(0) - windowBarHeight);

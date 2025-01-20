@@ -5,82 +5,113 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
-pub const ActorPosition = struct { origin: rl.Vector2, width: f32, height: f32, rectTL: rl.Vector2, rectLR: rl.Vector2 };
+const Diamond = @import("./actors/diamond.zig").Diamond;
+const Empty = @import("./actors/empty.zig").Empty;
+const Mine = @import("./actors/mine.zig").Mine;
+const Star = @import("./actors/star.zig").Star;
 
-pub const ActorType = enum { DIAMOND, TRIANGLE, STAR, MINE };
-const ActorInterface = struct {
-    draw: fn (self: *ActorObject) void,
-    detectCollision: fn (self: *ActorObject, otherActor: ActorObject) bool,
-    setPosition: fn (self: *ActorObject, position: rl.Vector2) ActorPosition,
+const Actor = union(enum) {
+    diamond: Diamond,
+    mine: Mine,
+    star: Star,
+    empty: Empty,
 };
 
-const Diamond = struct {
-    position: ActorPosition,
-    interface: ActorInterface,
-    // zig fmt: off
-    pub fn init() Diamond {
-        return Diamond{ 
-            .position = .{ 
-                .origin = rl.Vector2.init(50, 50), 
-                .rectTL = rl.Vector2.init(50, 50), 
-                .rectLR = rl.Vector2.init(50, 50), 
-                .height = 10, 
-                .width = 10 
-            },
-            .interface = .{
-                .draw = drawDiamond,
-                .detectCollision = detectCollisionDiamond,
-                .setPosition = setPosition
-                
-            } 
-        };
+const ActorMaster = struct {
+    actors: [1024]Actor,
+
+    pub fn init() ActorMaster {
+        var uninitialized: [1024]Actor = undefined;
+        for (uninitialized[0..]) |*actor| {
+            actor.* = Actor{ .empty = Empty.init() };
+        }
+
+        return ActorMaster{ .actors = uninitialized };
+    }
+
+    pub fn processActors(self: *@This()) void {
+        for (self.actors) |actor| {
+            std.debug.print("  {}\n", .{actor});
+        }
+    }
+
+    pub fn addActor(self: *@This(), new_actor: Actor) void {
+        // _ = new_actor;
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .empty => {
+                    std.debug.print("Found empty {}\n", .{actor});
+                    actor.* = new_actor;
+                    return;
+                },
+                else => {},
+            }
+        }
+        std.debug.print("Unable to add actor\n", .{});
+    }
+
+    pub fn listActive(self: *@This()) void {
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .empty => {},
+                else => {
+                    std.debug.print("Found {}\n", .{actor});
+                },
+            }
+        }
+    }
+
+    pub fn handleUpdate(self: *@This()) void {
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .diamond => actor.diamond.actor_interface.sprite.handleUpdate(actor),
+                .mine => actor.mine.actor_interface.sprite.handleUpdate(actor),
+                else => {},
+            }
+        }
     }
 };
+
 // zig fmt: on
 
-fn drawDiamond(self: *ActorObject) void {
-    std.log.info("draw {}", .{self.position.origin});
-}
-
-fn detectCollisionDiamond(self: *ActorObject, other: ActorObject) bool {
-    std.log.info("detect {} {}", .{ self.position.origin, other });
-    return false;
-}
-
-fn setPosition(self: *ActorObject, position: rl.Vector2) ActorPosition {
-    std.log.info("setPosition {} {}", .{ self.position.origin, position });
-    return ActorPosition{ .origin = rl.Vector2.init(50, 50), .rectTL = rl.Vector2.init(50, 50), .rectLR = rl.Vector2.init(50, 50), .height = 10, .width = 10 };
-}
-
-const Triangle = struct { position: ActorPosition, interface: ActorInterface };
-
-const Star = struct { position: ActorPosition, interface: ActorInterface };
-
-const Mine = struct { position: ActorPosition, interface: ActorInterface };
-
-const ActorObject = union(enum) { DIAMOND: Diamond, TRIANGLE: Triangle, STAR: Star, MINE: Mine };
-
-const level = struct {
-    numDiamonds: u16,
-    numTriangles: u16,
-    numStars: u16,
-    numMines: u16,
-};
-
-const levels = struct {
-    levels: []level,
-};
-
 test "This is a test" {
-    const d1 = Diamond.init();
-    const d2 = Diamond.init();
+    @setEvalBranchQuota(10_000);
+    var actor_master = ActorMaster.init();
+    actor_master.processActors();
+    actor_master.addActor(Actor{ .diamond = Diamond.init(100, 200) });
+    actor_master.addActor(Actor{ .mine = Mine.init(0, 0) });
+    actor_master.listActive();
+    actor_master.handleUpdate();
 
-    comptime var test_actors: [2]ActorInterface = undefined;
-    test_actors[0] = d1.interface;
-    test_actors[1] = d2.interface;
-
-    for (test_actors) |actor, index| {
-        std.log.info("Actor at index {d}: {}", .{index, actor});
+    switch (actor_master.actors[0]) {
+        .diamond => {
+            actor_master.actors[0].diamond.actor_interface.sprite.handleDraw(&actor_master.actors[0]);
+        },
+        .mine => {},
+        else => {
+            std.debug.print("ignore ", .{});
+        },
     }
-    try expect(false);
+
+    try expect(true);
+
+    // var shape_d1 = Shape{ .diamond = Diamond{ .x = 100, .y = 200, .active = true } };
+    // shape_d1.diamond.setPosition(50, 50);
+    // std.debug.print("\n{}\n", .{shape_d1});
+
+    // var shape_m1 = Shape{ .mine = Mine{ .x = 100, .y = 200, .active = true } };
+    // shape_m1.mine.setPosition(51, 51);
+    // std.debug.print("{}\n", .{shape_m1});
+
+    // var shape_s1 = Shape{ .star = Star{ .x = 100, .y = 200, .active = true } };
+    // shape_s1.star.setPosition(51, 51);
+    // std.debug.print("{}\n", .{shape_s1});
+
+    // for (shapes[0..]) |*shape| {
+    //     shape.* = Shape{ .empty = Empty.init() };
+    // }
+
+    // for (shapes) |shape| {
+    //     std.debug.print("  {}\n", .{shape});
+    // }
 }
