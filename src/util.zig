@@ -128,3 +128,17 @@ test "isOverLapping - non Overlapping" {
     ol = isOverLappingRectangles(rect1, rect2);
     try expect(ol == null);
 }
+
+pub fn generateRandomIntInRange(rng: *std.Random.Xoshiro256, min: u32, max: u32) u32 {
+    const range: u32 = max - min + 1;
+    return @as(u32, @intCast(rng.next() % range)) + min;
+}
+
+test "generateRandomIntInRange" {
+    var rng = std.Random.Xoshiro256.init(1234);
+    for (0..500) |_| {
+        const actual = generateRandomIntInRange(&rng, 10, 100);
+        // std.debug.print("random {}\n", .{actual});
+        try expect(actual >= 10 and actual <= 100);
+    }
+}

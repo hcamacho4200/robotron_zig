@@ -6,6 +6,7 @@ const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
 const d = @import("./actors/diamond.zig");
+const u = @import("util.zig");
 
 const Diamond = @import("./actors/diamond.zig").Diamond;
 const Empty = @import("./actors/empty.zig").Empty;
@@ -73,6 +74,28 @@ pub const ActorMaster = struct {
                 else => {},
             }
         }
+    }
+
+    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle) ?struct { actor: *Actor, overlap: u.Rectangle } {
+        for (self.actors[0..]) |*actor| {
+            var rect_actor: u.Rectangle = undefined;
+            switch (actor.*) {
+                .diamond => {
+                    rect_actor = u.Rectangle.init(
+                        actor.diamond.sprite_position.x,
+                        actor.diamond.sprite_position.y,
+                        actor.diamond.sprite_position.width,
+                        actor.diamond.sprite_position.height,
+                    );
+                },
+                else => {},
+            }
+            const overlap = u.isOverLappingRectangles(rect_actor, rect_test);
+            if (overlap) |overlap_rectangle| {
+                return .{ .actor = actor, .overlap = overlap_rectangle };
+            }
+        }
+        return null;
     }
 };
 

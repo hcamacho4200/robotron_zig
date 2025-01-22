@@ -34,12 +34,16 @@ pub fn main() !void {
     const diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png");
     a_diamond.actor_image = diamond_actor_image;
     std.debug.print("{}", .{diamond_actor_image});
-
-    const test_diamond = a_diamond.Diamond.init(50, 50);
-    std.debug.print("{}\n", .{test_diamond});
+    a_diamond.actor_image.actor_mask.dumpMask();
 
     var actor_master = a.ActorMaster.init();
     actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(400, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(600, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(800, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 400) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 600) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 800) });
     actor_master.listActive();
 
     const windowBarHeight = estimateTitleBarHeight();
@@ -65,9 +69,6 @@ pub fn main() !void {
     // const robotron_yellow = [4]f32{ 233.0 / 255.0, 233.0 / 255.0, 0.0, 255.0 / 255.0 };
     const robotron_green = [4]f32{ 19.0 / 255.0, 236.0 / 255.0, 0.0 / 255.0, 255.0 / 255.0 };
     const robotron_blue = [4]f32{ 0.0 / 255.0, 0.0 / 255.0, 250.0 / 255.0, 255.0 / 255.0 };
-
-    // load sprite star
-    const spriteStarTexture = rl.LoadTexture("resources/textures/sprite-diamond.png");
 
     // zig fmt: off
     const PlayerGlassesColorStatus = struct { 
@@ -95,18 +96,6 @@ pub fn main() !void {
             player.updatePlayerScale(game.screen.height);
             game.screen.updated = false;
         }
-        const deltaTime = rl.GetFrameTime();
-
-        // Player Movement
-        try player.handlePlayerInput(game, deltaTime);
-
-        // Player Shooting
-        player.handlePlayerShots(game, deltaTime);
-
-        // Debug Info
-        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
-            game.debugInfo = !game.debugInfo;
-        }
 
         // Update Player Portal (Game Field)
         game.updateGameField();
@@ -116,6 +105,32 @@ pub fn main() !void {
         }
         const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
         const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
+
+        const deltaTime = rl.GetFrameTime();
+
+        // Player Movement
+        try player.handlePlayerInput(game, deltaTime);
+
+        // Player Shooting
+        player.handlePlayerShots(game, deltaTime);
+
+        // Player Collision with Actors
+        var player_collision = false;
+        var player_overlap: u.Rectangle = undefined;
+        const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
+        const actor_collided_with = actor_master.checkCollision(rect_test);
+        if (actor_collided_with) |ao| {
+            player_collision = true;
+            player_overlap = ao.overlap;
+            std.debug.print("player collision with {} bounded by {}\n", .{ ao.actor, ao.overlap });
+        } else {
+            player_collision = false;
+        }
+
+        // Debug Info
+        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
+            game.debugInfo = !game.debugInfo;
+        }
 
         // Setup shader value pass-thru
         rl.SetShaderValue(playerDownCropShader, rl.GetShaderLocation(playerDownCropShader, "newColor"), &newColor, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
@@ -140,8 +155,6 @@ pub fn main() !void {
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
         rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
 
-        rl.DrawTextureV(spriteStarTexture, rl.Vector2.init(0, 0), rl.WHITE);
-
         // handle drawing of the actors
         actor_master.handleDraw();
 
@@ -151,6 +164,11 @@ pub fn main() !void {
 
         // Draw the bullets
         player.drawShots();
+
+        // Draw the player overlap collision
+        if (player_collision) {
+            rl.DrawRectangle(@intFromFloat(player_overlap.x), @intFromFloat(player_overlap.y), @intFromFloat(player_overlap.width), @intFromFloat(player_overlap.height), rl.Color.init(255, 255, 255, 150));
+        }
 
         // Handle debugging info
         try di.handleDisplayDebugInfo(game, player, deltaTime);
