@@ -5,19 +5,21 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
+const d = @import("./actors/diamond.zig");
+
 const Diamond = @import("./actors/diamond.zig").Diamond;
 const Empty = @import("./actors/empty.zig").Empty;
 const Mine = @import("./actors/mine.zig").Mine;
 const Star = @import("./actors/star.zig").Star;
 
-const Actor = union(enum) {
+pub const Actor = union(enum) {
     diamond: Diamond,
     mine: Mine,
     star: Star,
     empty: Empty,
 };
 
-const ActorMaster = struct {
+pub const ActorMaster = struct {
     actors: [1024]Actor,
 
     pub fn init() ActorMaster {
@@ -25,14 +27,7 @@ const ActorMaster = struct {
         for (uninitialized[0..]) |*actor| {
             actor.* = Actor{ .empty = Empty.init() };
         }
-
         return ActorMaster{ .actors = uninitialized };
-    }
-
-    pub fn processActors(self: *@This()) void {
-        for (self.actors) |actor| {
-            std.debug.print("  {}\n", .{actor});
-        }
     }
 
     pub fn addActor(self: *@This(), new_actor: Actor) void {
@@ -70,6 +65,15 @@ const ActorMaster = struct {
             }
         }
     }
+
+    pub fn handleDraw(self: *@This()) void {
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .diamond => actor.diamond.actor_interface.sprite.handleDraw(actor),
+                else => {},
+            }
+        }
+    }
 };
 
 // zig fmt: on
@@ -77,10 +81,16 @@ const ActorMaster = struct {
 test "This is a test" {
     @setEvalBranchQuota(10_000);
     var actor_master = ActorMaster.init();
-    actor_master.processActors();
     actor_master.addActor(Actor{ .diamond = Diamond.init(100, 200) });
     actor_master.addActor(Actor{ .mine = Mine.init(0, 0) });
     actor_master.listActive();
     actor_master.handleUpdate();
     try expect(true);
+}
+
+test "Checking" {
+    const TestType = struct { active: bool };
+    var testType = TestType{ .active = true };
+    testType.active = false;
+    std.debug.print("{}", .{testType});
 }

@@ -11,6 +11,8 @@ const di = @import("debug_info.zig");
 const p = @import("player.zig");
 const u = @import("util.zig");
 const a = @import("actor_master.zig");
+const ai = @import("./actors/image.zig");
+const a_diamond = @import("./actors/diamond.zig");
 
 // zig fmt: on
 
@@ -28,6 +30,17 @@ pub fn main() !void {
     rl.SetWindowMinSize(400, 300);
     defer rl.CloseWindow();
     rl.SetTargetFPS(60);
+
+    const diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png");
+    a_diamond.actor_image = diamond_actor_image;
+    std.debug.print("{}", .{diamond_actor_image});
+
+    const test_diamond = a_diamond.Diamond.init(50, 50);
+    std.debug.print("{}\n", .{test_diamond});
+
+    var actor_master = a.ActorMaster.init();
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
+    actor_master.listActive();
 
     const windowBarHeight = estimateTitleBarHeight();
 
@@ -54,7 +67,7 @@ pub fn main() !void {
     const robotron_blue = [4]f32{ 0.0 / 255.0, 0.0 / 255.0, 250.0 / 255.0, 255.0 / 255.0 };
 
     // load sprite star
-    const spriteStarTexture = rl.LoadTexture("resources/textures/sprite-star.png");
+    const spriteStarTexture = rl.LoadTexture("resources/textures/sprite-diamond.png");
 
     // zig fmt: off
     const PlayerGlassesColorStatus = struct { 
@@ -128,6 +141,9 @@ pub fn main() !void {
         rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
 
         rl.DrawTextureV(spriteStarTexture, rl.Vector2.init(0, 0), rl.WHITE);
+
+        // handle drawing of the actors
+        actor_master.handleDraw();
 
         rl.BeginShaderMode(playerDownCropShader);
         rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
