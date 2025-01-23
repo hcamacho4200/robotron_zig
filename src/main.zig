@@ -10,10 +10,17 @@ const mb = @import("message_box.zig");
 const di = @import("debug_info.zig");
 const p = @import("player.zig");
 const u = @import("util.zig");
+const a = @import("actor_master.zig");
+const ai = @import("./actors/image.zig");
+const a_diamond = @import("./actors/diamond.zig");
 
 // zig fmt: on
 
 const playerRectColor = rl.Color.init(255, 0, 0, 255);
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}
 
 pub fn main() !void {
     var game = g.Game.init();
@@ -23,6 +30,26 @@ pub fn main() !void {
     rl.SetWindowMinSize(400, 300);
     defer rl.CloseWindow();
     rl.SetTargetFPS(60);
+
+    const diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png");
+    a_diamond.actor_image = diamond_actor_image;
+    std.debug.print("{}", .{diamond_actor_image});
+    a_diamond.actor_image.actor_mask.dumpMask();
+
+    const player_actor_image = ai.ActorImage.init("./resources/textures/player-down-crop.png");
+    p.actor_image = player_actor_image;
+    std.debug.print("{}", .{player_actor_image});
+    p.actor_image.actor_mask.dumpMask();
+
+    var actor_master = a.ActorMaster.init();
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(400, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(600, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(800, 200) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 400) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 600) });
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 800) });
+    actor_master.listActive();
 
     const windowBarHeight = estimateTitleBarHeight();
 
@@ -37,7 +64,6 @@ pub fn main() !void {
     const frameRec = rl.Rectangle.init(0.0, 0.0, playerDownCropTexture_width, playerDownCropTexture_height);
     player.dimensions.width = playerDownCropTexture_width;
     player.dimensions.height = playerDownCropTexture_height;
-
     const playerDownCropShader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
 
     const image = rl.LoadImageFromTexture(playerDownCropTexture);
@@ -75,18 +101,6 @@ pub fn main() !void {
             player.updatePlayerScale(game.screen.height);
             game.screen.updated = false;
         }
-        const deltaTime = rl.GetFrameTime();
-
-        // Player Movement
-        try player.handlePlayerInput(game, deltaTime);
-
-        // Player Shooting
-        player.handlePlayerShots(game, deltaTime);
-
-        // Debug Info
-        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
-            game.debugInfo = !game.debugInfo;
-        }
 
         // Update Player Portal (Game Field)
         game.updateGameField();
@@ -96,6 +110,32 @@ pub fn main() !void {
         }
         const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
         const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
+
+        const deltaTime = rl.GetFrameTime();
+
+        // Player Movement
+        try player.handlePlayerInput(game, deltaTime);
+
+        // Player Shooting
+        player.handlePlayerShots(game, deltaTime);
+
+        // Player Collision with Actors
+        var player_collision = false;
+        var player_overlap: u.Rectangle = undefined;
+        const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
+        const actor_collided_with = actor_master.checkCollision(rect_test, p.actor_image);
+        if (actor_collided_with) |ao| {
+            player_collision = true;
+            player_overlap = ao.overlap;
+            std.debug.print("player collision with {} bounded by {}\n", .{ ao.actor, ao.overlap });
+        } else {
+            player_collision = false;
+        }
+
+        // Debug Info
+        if (rl.IsKeyPressed(rl.KeyboardKey.KEY_GRAVE.toCInt())) {
+            game.debugInfo = !game.debugInfo;
+        }
 
         // Setup shader value pass-thru
         rl.SetShaderValue(playerDownCropShader, rl.GetShaderLocation(playerDownCropShader, "newColor"), &newColor, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
@@ -120,12 +160,20 @@ pub fn main() !void {
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
         rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
 
+        // handle drawing of the actors
+        actor_master.handleDraw();
+
         rl.BeginShaderMode(playerDownCropShader);
         rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
         rl.EndShaderMode();
 
         // Draw the bullets
         player.drawShots();
+
+        // Draw the player overlap collision
+        if (player_collision) {
+            rl.DrawRectangle(@intFromFloat(player_overlap.x), @intFromFloat(player_overlap.y), @intFromFloat(player_overlap.width), @intFromFloat(player_overlap.height), rl.Color.init(255, 255, 255, 150));
+        }
 
         // Handle debugging info
         try di.handleDisplayDebugInfo(game, player, deltaTime);

@@ -8,6 +8,10 @@ const g = @import("game.zig");
 const s = @import("shooting.zig");
 const p = @import("player.zig");
 
+const ActorImage = @import("./actors/image.zig").ActorImage;
+
+pub var actor_image: ActorImage = undefined;
+
 // Define an enum for player direction
 pub const Direction = enum { UP, DOWN, LEFT, RIGHT };
 

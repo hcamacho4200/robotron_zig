@@ -4,6 +4,9 @@ const expect = @import("std").testing.expect;
 const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 
+const ai = @import("./actors/image.zig");
+const Diamond = @import("actors/diamond.zig").Diamond;
+
 pub fn vector2Add(v1: rl.Vector2, v2: rl.Vector2) rl.Vector2 {
     return rl.Vector2{
         .x = v1.x + v2.x,
@@ -25,11 +28,11 @@ pub fn calculateDistance(a: rl.Vector2, b: rl.Vector2) f32 {
 }
 
 test "calculateDistance should return 5" {
-    const v1 = rl.Vector2(0, 0);
-    const v2 = rl.Vector2(3, 4);
+    const v1 = rl.Vector2.init(0, 0);
+    const v2 = rl.Vector2.init(3, 4);
 
     const actual = calculateDistance(v1, v2);
-    expect(actual == 5);
+    try expect(actual == 5);
 }
 
 pub fn calculatePointOnLine(end: rl.Vector2, origin: rl.Vector2, distance: f32) rl.Vector2 {
@@ -57,4 +60,181 @@ pub fn calculatePointOnLine(end: rl.Vector2, origin: rl.Vector2, distance: f32) 
         .x = end.x + scaled.x,
         .y = end.y + scaled.y,
     };
+}
+
+pub const RGB = struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+
+    pub fn init(r: u8, g: u8, b: u8, a: u8) RGB {
+        return RGB{ .r = r, .g = g, .b = b, .a = a };
+    }
+};
+
+pub const Rectangle = struct {
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+
+    pub fn init(x: f32, y: f32, width: f32, height: f32) Rectangle {
+        return Rectangle{ .x = x, .y = y, .width = width, .height = height };
+    }
+
+    pub fn equal(self: *const Rectangle, rect: Rectangle) bool {
+        return self.x == rect.x and self.y == rect.y and self.width == self.width and self.height == self.height;
+    }
+};
+
+pub fn isOverLappingRectangles(rect1: Rectangle, rect2: Rectangle) ?Rectangle {
+    const left = @max(rect1.x, rect2.x);
+    const right = @min(rect1.x + rect1.width, rect2.x + rect2.width);
+    const top = @max(rect1.y, rect2.y);
+    const bottom = @min(rect1.y + rect1.height, rect2.y + rect2.height);
+
+    if (right > left and bottom > top) {
+        return Rectangle{
+            .x = left,
+            .y = top,
+            .width = right - left,
+            .height = bottom - top,
+        };
+    }
+    return null; // No overlap
+}
+
+test "isOverLapping - Overlapping" {
+    const rect1 = Rectangle{ .x = 10, .y = 10, .width = 50, .height = 50 };
+    const rect2 = Rectangle{ .x = 30, .y = 30, .width = 50, .height = 50 };
+
+    const ol = isOverLappingRectangles(rect1, rect2);
+    try expect(ol != null);
+
+    if (ol) |overlap| {
+        std.debug.print("Overlap {d} {d} {d} {d}\n", .{ overlap.x, overlap.y, overlap.width, overlap.height });
+        try expect(overlap.equal(Rectangle{ .x = 30, .y = 30, .width = 30, .height = 30 }));
+    }
+    try expect(true);
+}
+
+test "isOverLapping - non Overlapping" {
+    var rect1 = Rectangle{ .x = 10, .y = 10, .width = 10, .height = 10 };
+    var rect2 = Rectangle{ .x = 30, .y = 30, .width = 50, .height = 50 };
+    var ol = isOverLappingRectangles(rect1, rect2);
+    try expect(ol == null);
+
+    rect1 = Rectangle{ .x = 80, .y = 80, .width = 10, .height = 10 };
+    rect2 = Rectangle{ .x = 30, .y = 30, .width = 50, .height = 50 };
+    ol = isOverLappingRectangles(rect1, rect2);
+    try expect(ol == null);
+
+    rect1 = Rectangle{ .x = 10, .y = 80, .width = 10, .height = 10 };
+    rect2 = Rectangle{ .x = 30, .y = 30, .width = 50, .height = 50 };
+    ol = isOverLappingRectangles(rect1, rect2);
+    try expect(ol == null);
+
+    rect1 = Rectangle{ .x = 80, .y = 10, .width = 10, .height = 10 };
+    rect2 = Rectangle{ .x = 30, .y = 30, .width = 50, .height = 50 };
+    ol = isOverLappingRectangles(rect1, rect2);
+    try expect(ol == null);
+}
+
+pub fn generateRandomIntInRange(rng: *std.Random.Xoshiro256, min: u32, max: u32) u32 {
+    const range: u32 = max - min + 1;
+    return @as(u32, @intCast(rng.next() % range)) + min;
+}
+
+test "generateRandomIntInRange" {
+    var rng = std.Random.Xoshiro256.init(1234);
+    for (0..500) |_| {
+        const actual = generateRandomIntInRange(&rng, 10, 100);
+        // std.debug.print("random {}\n", .{actual});
+        try expect(actual >= 10 and actual <= 100);
+    }
+}
+
+/// Detect Pixel Overlap
+/// - normalize the overlap rect by subtracting test and actor rects coordinates (in the loop)
+/// - flatten x,y for each rect into an offset from 0 in each mask
+pub fn detectPixelOverlap(actor_mask: [*]u8, rect_actor: Rectangle, test_mask: [*]u8, rect_test: Rectangle, overlap_rect: Rectangle) ?bool {
+    const overlap_rect_x = @as(usize, @intFromFloat(overlap_rect.x));
+    const overlap_rect_y = @as(usize, @intFromFloat(overlap_rect.y));
+    const overlap_rect_width = @as(usize, @intFromFloat(overlap_rect.width));
+    const overlap_rect_height = @as(usize, @intFromFloat(overlap_rect.height));
+    const rect_actor_y = @as(usize, @intFromFloat(rect_actor.y));
+    const rect_actor_x = @as(usize, @intFromFloat(rect_actor.x));
+    const rect_actor_width = @as(usize, @intFromFloat(rect_actor.width));
+    const rect_test_y = @as(usize, @intFromFloat(rect_test.y));
+    const rect_test_x = @as(usize, @intFromFloat(rect_test.x));
+    const rect_test_width = @as(usize, @intFromFloat(rect_test.width));
+
+    var results = std.ArrayList(RGB).init(std.heap.page_allocator);
+    defer results.deinit();
+    const size = @as(usize, @intCast(overlap_rect_height * overlap_rect_width));
+    results.ensureTotalCapacity(size) catch |err| {
+        std.debug.print("Error: {}\n", .{err});
+    };
+
+    var collision_detection = false;
+
+    var results_count: usize = 0;
+    const pixel_collision = RGB.init(255, 0, 0, 100);
+    const blank = RGB.init(0, 0, 0, 0);
+
+    for (0..overlap_rect_width) |y| {
+        for (0..overlap_rect_height) |x| {
+            const actor_pixel = (overlap_rect_y - rect_actor_y + y) * rect_actor_width + (overlap_rect_x - rect_actor_x + x);
+            const test_pixel = (overlap_rect_y - rect_test_y + y) * rect_test_width + (overlap_rect_x - rect_test_x + x);
+
+            if (actor_mask[actor_pixel] == 1 and test_mask[test_pixel] == 1) {
+                collision_detection = true;
+                results.append(pixel_collision) catch |err| {
+                    std.debug.print("Error: {}\n", .{err});
+                };
+            } else {
+                results.append(blank) catch |err| {
+                    std.debug.print("Error: {}\n", .{err});
+                };
+            }
+            results_count += 1;
+        }
+    }
+    return collision_detection;
+}
+
+test "detectPixelOverlap - upper left" {
+    const actor_rect = Rectangle.init(50, 50, 10, 10);
+    var actor_mask = [_]u8{
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    };
+
+    const test_rect = Rectangle.init(56, 56, 10, 10);
+    var test_mask = [_]u8{
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    };
+
+    const overlap_rect = Rectangle.init(56, 56, 4, 4);
+
+    const results = detectPixelOverlap(actor_mask[0..], actor_rect, test_mask[0..], test_rect, overlap_rect);
+    std.debug.print("{any}\n", .{results});
 }
