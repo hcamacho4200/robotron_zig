@@ -4,6 +4,7 @@ const expect = @import("std").testing.expect;
 const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 
+const ai = @import("./actors/image.zig");
 const Diamond = @import("actors/diamond.zig").Diamond;
 
 pub fn vector2Add(v1: rl.Vector2, v2: rl.Vector2) rl.Vector2 {
@@ -60,6 +61,17 @@ pub fn calculatePointOnLine(end: rl.Vector2, origin: rl.Vector2, distance: f32) 
         .y = end.y + scaled.y,
     };
 }
+
+pub const RGB = struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+
+    pub fn init(r: u8, g: u8, b: u8, a: u8) RGB {
+        return RGB{ .r = r, .g = g, .b = b, .a = a };
+    }
+};
 
 pub const Rectangle = struct {
     x: f32,
@@ -141,4 +153,88 @@ test "generateRandomIntInRange" {
         // std.debug.print("random {}\n", .{actual});
         try expect(actual >= 10 and actual <= 100);
     }
+}
+
+/// Detect Pixel Overlap
+/// - normalize the overlap rect by subtracting test and actor rects coordinates (in the loop)
+/// - flatten x,y for each rect into an offset from 0 in each mask
+pub fn detectPixelOverlap(actor_mask: [*]u8, rect_actor: Rectangle, test_mask: [*]u8, rect_test: Rectangle, overlap_rect: Rectangle) ?bool {
+    const overlap_rect_x = @as(usize, @intFromFloat(overlap_rect.x));
+    const overlap_rect_y = @as(usize, @intFromFloat(overlap_rect.y));
+    const overlap_rect_width = @as(usize, @intFromFloat(overlap_rect.width));
+    const overlap_rect_height = @as(usize, @intFromFloat(overlap_rect.height));
+    const rect_actor_y = @as(usize, @intFromFloat(rect_actor.y));
+    const rect_actor_x = @as(usize, @intFromFloat(rect_actor.x));
+    const rect_actor_width = @as(usize, @intFromFloat(rect_actor.width));
+    const rect_test_y = @as(usize, @intFromFloat(rect_test.y));
+    const rect_test_x = @as(usize, @intFromFloat(rect_test.x));
+    const rect_test_width = @as(usize, @intFromFloat(rect_test.width));
+
+    var results = std.ArrayList(RGB).init(std.heap.page_allocator);
+    defer results.deinit();
+    const size = @as(usize, @intCast(overlap_rect_height * overlap_rect_width));
+    results.ensureTotalCapacity(size) catch |err| {
+        std.debug.print("Error: {}\n", .{err});
+    };
+
+    var collision_detection = false;
+
+    var results_count: usize = 0;
+    const pixel_collision = RGB.init(255, 0, 0, 100);
+    const blank = RGB.init(0, 0, 0, 0);
+
+    for (0..overlap_rect_width) |y| {
+        for (0..overlap_rect_height) |x| {
+            const actor_pixel = (overlap_rect_y - rect_actor_y + y) * rect_actor_width + (overlap_rect_x - rect_actor_x + x);
+            const test_pixel = (overlap_rect_y - rect_test_y + y) * rect_test_width + (overlap_rect_x - rect_test_x + x);
+
+            if (actor_mask[actor_pixel] == 1 and test_mask[test_pixel] == 1) {
+                collision_detection = true;
+                results.append(pixel_collision) catch |err| {
+                    std.debug.print("Error: {}\n", .{err});
+                };
+            } else {
+                results.append(blank) catch |err| {
+                    std.debug.print("Error: {}\n", .{err});
+                };
+            }
+            results_count += 1;
+        }
+    }
+    return collision_detection;
+}
+
+test "detectPixelOverlap - upper left" {
+    const actor_rect = Rectangle.init(50, 50, 10, 10);
+    var actor_mask = [_]u8{
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    };
+
+    const test_rect = Rectangle.init(56, 56, 10, 10);
+    var test_mask = [_]u8{
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    };
+
+    const overlap_rect = Rectangle.init(56, 56, 4, 4);
+
+    const results = detectPixelOverlap(actor_mask[0..], actor_rect, test_mask[0..], test_rect, overlap_rect);
+    std.debug.print("{any}\n", .{results});
 }

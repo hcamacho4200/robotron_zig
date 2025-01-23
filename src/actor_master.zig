@@ -6,6 +6,7 @@ const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
 const d = @import("./actors/diamond.zig");
+const ai = @import("./actors/image.zig");
 const u = @import("util.zig");
 
 const Diamond = @import("./actors/diamond.zig").Diamond;
@@ -76,9 +77,10 @@ pub const ActorMaster = struct {
         }
     }
 
-    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle) ?struct { actor: *Actor, overlap: u.Rectangle } {
+    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle, test_image: ai.ActorImage) ?struct { actor: *Actor, overlap: u.Rectangle } {
         for (self.actors[0..]) |*actor| {
             var rect_actor: u.Rectangle = undefined;
+            var actor_mask: ai.ActorMask = undefined;
             switch (actor.*) {
                 .diamond => {
                     rect_actor = u.Rectangle.init(
@@ -87,12 +89,20 @@ pub const ActorMaster = struct {
                         actor.diamond.sprite_position.width,
                         actor.diamond.sprite_position.height,
                     );
+                    actor_mask = d.actor_image.actor_mask;
                 },
                 else => {},
             }
             const overlap = u.isOverLappingRectangles(rect_actor, rect_test);
             if (overlap) |overlap_rectangle| {
-                return .{ .actor = actor, .overlap = overlap_rectangle };
+                const pixel_collision = u.detectPixelOverlap(actor_mask.mask, rect_actor, test_image.actor_mask.mask, rect_test, overlap_rectangle);
+                std.debug.print("rect collsion {}\n", .{overlap_rectangle});
+                if (pixel_collision) |result| {
+                    if (result) {
+                        std.debug.print("pixel collsion {}\n", .{result});
+                        return .{ .actor = actor, .overlap = overlap_rectangle };
+                    }
+                }
             }
         }
         return null;

@@ -4,6 +4,8 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
+const u = @import("../util.zig");
+
 pub const ActorMask = struct {
     width: i32,
     height: i32,
@@ -20,9 +22,6 @@ pub const ActorMask = struct {
             const alpha = @as([*]u8, @ptrCast(image.data))[i * 4 + 3];
             mask[i] = if (alpha > 50) 1 else 0;
         }
-        // for (0..mask_length) |i| {
-        //     std.debug.print("alpha {} mask {} \n", .{ @as([*]u8, @ptrCast(image.data))[i * 4 + 3], mask[i] });
-        // }
 
         return ActorMask{
             .width = width,
@@ -31,14 +30,30 @@ pub const ActorMask = struct {
         };
     }
 
+    /// isPixelCollsion - test if two masks have a shared pixel
+    // pub fn isPixelCollision(self: *@This(), rect_actor: u.Rectangle, test_mask: ActorMask, rect_test: u.Rectangle, overlap_rect: u.Rectangle ) bool {
+
+    //     for (0..overlap_rect.height) | overlap_y| {
+    //         for (0..overlap_rect.width | overlap_x)| {
+    //             const actor_mask_pixel = self.mask[(rect_actor.y - y) * width + (rect_actor.x - x)]
+    //             const test_mask_pixel = test_mask.mask[(rect_test.y - y) * width + (rect_test.x - x)]
+
+    //         }
+    //     }
+
+    // }
+
     pub fn dumpMask(self: *const @This()) void {
         std.debug.print("\n", .{});
-        for (0..@as(usize, @intCast(self.height))) |y| {
-            for (0..@as(usize, @intCast(self.width))) |x| {
-                std.debug.print("{}", .{self.mask[y * 50 + x]});
+        const width = @as(usize, @intCast(self.width));
+        const height = @as(usize, @intCast(self.height));
+        for (0..height) |y| {
+            for (0..width) |x| {
+                std.debug.print("{}", .{self.mask[y * width + x]});
             }
             std.debug.print("\n", .{});
         }
+        std.debug.print("\n", .{});
     }
 };
 

@@ -36,6 +36,11 @@ pub fn main() !void {
     std.debug.print("{}", .{diamond_actor_image});
     a_diamond.actor_image.actor_mask.dumpMask();
 
+    const player_actor_image = ai.ActorImage.init("./resources/textures/player-down-crop.png");
+    p.actor_image = player_actor_image;
+    std.debug.print("{}", .{player_actor_image});
+    p.actor_image.actor_mask.dumpMask();
+
     var actor_master = a.ActorMaster.init();
     actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
     actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(400, 200) });
@@ -118,7 +123,7 @@ pub fn main() !void {
         var player_collision = false;
         var player_overlap: u.Rectangle = undefined;
         const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
-        const actor_collided_with = actor_master.checkCollision(rect_test);
+        const actor_collided_with = actor_master.checkCollision(rect_test, p.actor_image);
         if (actor_collided_with) |ao| {
             player_collision = true;
             player_overlap = ao.overlap;
