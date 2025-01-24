@@ -7,6 +7,7 @@ const rg = rlzb.raygui;
 const g = @import("game.zig");
 const s = @import("shooting.zig");
 const p = @import("player.zig");
+const i = @import("./actors/interfaces.zig");
 
 const ActorImage = @import("./actors/image.zig").ActorImage;
 
@@ -23,10 +24,7 @@ pub const Player = struct {
         y: f32,
         valid: bool, 
     },
-    center: struct {
-        x:f32,
-        y:f32,
-    }, 
+    center: i.SpriteCenter, 
     baseSpeed: f32,
     scaledSpeed: f32, 
     dimensions: struct { 
@@ -45,10 +43,7 @@ pub const Player = struct {
                 .y = 0,
                 .valid = false, 
             },
-            .center =  .{
-                .x = 0,
-                .y = 0,
-            }, 
+            .center =  i.SpriteCenter.init(0, 0, 0, 0), 
             .dimensions = .{ 
                 .width = 20, 
                 .height = 40 
