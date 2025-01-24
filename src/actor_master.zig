@@ -77,7 +77,9 @@ pub const ActorMaster = struct {
         }
     }
 
-    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle, test_image: ai.ActorImage) ?struct { actor: *Actor, overlap: u.Rectangle } {
+    const CollisionResult = struct { actor: *Actor, overlap: u.Rectangle, pixel: bool };
+
+    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle, test_image: ai.ActorImage, rectange_only: bool) ?CollisionResult {
         for (self.actors[0..]) |*actor| {
             var rect_actor: u.Rectangle = undefined;
             var actor_mask: ai.ActorMask = undefined;
@@ -95,14 +97,19 @@ pub const ActorMaster = struct {
             }
             const overlap = u.isOverLappingRectangles(rect_actor, rect_test);
             if (overlap) |overlap_rectangle| {
-                const pixel_collision = u.detectPixelOverlap(actor_mask.mask, rect_actor, test_image.actor_mask.mask, rect_test, overlap_rectangle);
-                std.debug.print("rect collsion {}\n", .{overlap_rectangle});
-                if (pixel_collision) |result| {
-                    if (result) {
-                        std.debug.print("pixel collsion {}\n", .{result});
-                        return .{ .actor = actor, .overlap = overlap_rectangle };
+                var result = CollisionResult{ .actor = actor, .overlap = overlap_rectangle, .pixel = true };
+
+                if (!rectange_only) {
+                    const pixel_collision = u.detectPixelOverlap(actor_mask.mask, rect_actor, test_image.actor_mask.mask, rect_test, overlap_rectangle);
+                    std.debug.print("rect collsion {}\n", .{overlap_rectangle});
+                    if (pixel_collision) |pc| {
+                        if (pc) {
+                            std.debug.print("pixel collsion {}\n", .{result});
+                            result = CollisionResult{ .actor = actor, .overlap = overlap_rectangle, .pixel = true };
+                        }
                     }
                 }
+                return result;
             }
         }
         return null;

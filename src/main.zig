@@ -31,6 +31,9 @@ pub fn main() !void {
     defer rl.CloseWindow();
     rl.SetTargetFPS(60);
 
+    // Establish Random Number Seed
+    var rng = std.Random.Xoshiro256.init(1234);
+
     const diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png");
     a_diamond.actor_image = diamond_actor_image;
     std.debug.print("{}", .{diamond_actor_image});
@@ -41,21 +44,41 @@ pub fn main() !void {
     std.debug.print("{}", .{player_actor_image});
     p.actor_image.actor_mask.dumpMask();
 
-    var actor_master = a.ActorMaster.init();
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(400, 200) });
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(600, 200) });
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(800, 200) });
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 400) });
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 600) });
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 800) });
-    actor_master.listActive();
-
     const windowBarHeight = estimateTitleBarHeight();
 
     game.updateScreenSize(@divTrunc((rl.GetMonitorHeight(0) - windowBarHeight) * 4, 3), rl.GetMonitorHeight(0) - windowBarHeight);
+    game.updateGameField();
 
     var player = p.Player.init();
+    updateScreen(&game, &player);
+
+    var actor_master = a.ActorMaster.init();
+    for (0..100) |_| {
+        const player_frame_x_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.x));
+        const player_frame_x_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.x + game.playerFrame.frameSize.x));
+        const player_frame_y_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.y));
+        const player_frame_y_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.y + game.playerFrame.frameSize.y));
+
+        while (true) {
+            const x = @as(f32, @floatFromInt(u.generateRandomIntInRange(&rng, player_frame_x_min, player_frame_x_max)));
+            const y = @as(f32, @floatFromInt(u.generateRandomIntInRange(&rng, player_frame_y_min, player_frame_y_max)));
+            const new_actor = a.Actor{ .diamond = a_diamond.Diamond.init(x, y) };
+            const rect_test = u.Rectangle.init(x, y, new_actor.diamond.sprite_position.width, new_actor.diamond.sprite_position.height);
+            const actor_collided_with = actor_master.checkCollision(rect_test, a_diamond.actor_image, true);
+            if (actor_collided_with) |_| {} else {
+                actor_master.addActor(new_actor);
+                break;
+            }
+        }
+    }
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(400, 200) });
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(600, 200) });
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(800, 200) });
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 400) });
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 600) });
+    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 800) });
+    actor_master.listActive();
 
     const playerDownCropTexture = rl.LoadTexture("resources/textures/player-down-crop.png");
     const playerDownCropTextureGlasses = rl.LoadTexture("resources/textures/player-down-crop-glasses.png");
@@ -89,25 +112,8 @@ pub fn main() !void {
     var playerGlassesColorStatus = PlayerGlassesColorStatus{ .colors = playerGlassesColors[0..], .position = 0, .total = playerGlassesColors.len };
 
     while (!rl.WindowShouldClose()) {
-        // if window is resized adjust width based on Height to maintain 4:3
-        if (game.screen.updated) {
-            rl.SetWindowSize(game.screen.width, game.screen.height);
-            player.updatePlayerScale(game.screen.height);
-            game.screen.updated = false;
-        }
-        if (rl.IsWindowResized()) {
-            game.updateScreenSize(@divTrunc(rl.GetRenderHeight() * 4, 3), rl.GetRenderHeight());
-            rl.SetWindowSize(game.screen.width, game.screen.height);
-            player.updatePlayerScale(game.screen.height);
-            game.screen.updated = false;
-        }
+        updateScreen(&game, &player);
 
-        // Update Player Portal (Game Field)
-        game.updateGameField();
-        if (!player.position.valid) {
-            player.setPlayerPosition(game.playerFrame.frameSize.x / 2 - player.dimensions.width / 2, game.playerFrame.frameSize.y / 2 - player.dimensions.height / 2);
-            player.position.valid = true;
-        }
         const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
         const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
 
@@ -123,7 +129,7 @@ pub fn main() !void {
         var player_collision = false;
         var player_overlap: u.Rectangle = undefined;
         const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
-        const actor_collided_with = actor_master.checkCollision(rect_test, p.actor_image);
+        const actor_collided_with = actor_master.checkCollision(rect_test, p.actor_image, false);
         if (actor_collided_with) |ao| {
             player_collision = true;
             player_overlap = ao.overlap;
@@ -181,6 +187,28 @@ pub fn main() !void {
         rl.EndDrawing();
     }
     return;
+}
+
+fn updateScreen(game: *g.Game, player: *p.Player) void {
+    // if window is resized adjust width based on Height to maintain 4:3
+    if (game.screen.updated) {
+        rl.SetWindowSize(game.screen.width, game.screen.height);
+        player.updatePlayerScale(game.screen.height);
+        game.screen.updated = false;
+    }
+    if (rl.IsWindowResized()) {
+        game.updateScreenSize(@divTrunc(rl.GetRenderHeight() * 4, 3), rl.GetRenderHeight());
+        rl.SetWindowSize(game.screen.width, game.screen.height);
+        player.updatePlayerScale(game.screen.height);
+        game.screen.updated = false;
+    }
+
+    // Update Player Portal (Game Field)
+    game.updateGameField();
+    if (!player.position.valid) {
+        player.setPlayerPosition(game.playerFrame.frameSize.x / 2 - player.dimensions.width / 2, game.playerFrame.frameSize.y / 2 - player.dimensions.height / 2);
+        player.position.valid = true;
+    }
 }
 
 fn estimateTitleBarHeight() c_int {
