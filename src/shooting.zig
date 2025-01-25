@@ -1,4 +1,5 @@
 const std = @import("std");
+const expect = std.testing.expect;
 
 const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
@@ -24,14 +25,15 @@ pub const Shot = struct {
     drawStart: rl.Vector2,
     drawEnd: rl.Vector2,
     direction: ShootDirection,
+    previous: rl.Vector2,
     active: bool,
 
     pub fn init(direction: ShootDirection, origin: rl.Vector2) Shot {
-        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .active = true };
+        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .previous = origin, .active = true };
     }
 
     pub fn init_inactive(direction: ShootDirection, origin: rl.Vector2) Shot {
-        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .active = false };
+        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .previous = origin, .active = false };
     }
 };
 
@@ -117,6 +119,60 @@ pub const ShootingMaster = struct {
         return rl.Vector2.init(offset_x, offset_y);
     }
 
+    /// Compute Shot Direction from two vectors
+    /// - used to find the direction needed to travse from the start to the end of a shot
+    pub fn computeShotDirection(start: rl.Vector2, end: rl.Vector2) rl.Vector2 {
+        const x = start.x - end.x;
+        const y = start.y - end.y;
+        var offset_x: f32 = undefined;
+        var offset_y: f32 = undefined;
+
+        if (x < 0) offset_x = -1 else if (x > 0) offset_x = 1 else offset_x = 0;
+        if (y < 0) offset_y = -1 else if (y > 0) offset_y = 1 else offset_y = 0;
+
+        return rl.Vector2.init(offset_x, offset_y);
+    }
+
+    test "computeShotDirection" {
+        var actual: rl.Vector2 = undefined;
+
+        // check up and to the left
+        actual = computeShotDirection(rl.Vector2.init(50, 50), rl.Vector2.init(60, 60));
+        try expect(actual.x == -1 and actual.y == -1);
+
+        // check down and to the left
+        actual = computeShotDirection(rl.Vector2.init(50, 70), rl.Vector2.init(60, 60));
+        try expect(actual.x == -1 and actual.y == 1);
+
+        // check up and to the right
+        actual = computeShotDirection(rl.Vector2.init(70, 50), rl.Vector2.init(60, 60));
+        try expect(actual.x == 1 and actual.y == -1);
+
+        // check down and to the right
+        actual = computeShotDirection(rl.Vector2.init(70, 70), rl.Vector2.init(60, 60));
+        try expect(actual.x == 1 and actual.y == 1);
+
+        // check to the left
+        actual = computeShotDirection(rl.Vector2.init(50, 60), rl.Vector2.init(60, 60));
+        try expect(actual.x == -1 and actual.y == 0);
+
+        // check to the right
+        actual = computeShotDirection(rl.Vector2.init(70, 60), rl.Vector2.init(60, 60));
+        try expect(actual.x == 1 and actual.y == 0);
+
+        // check to the up
+        actual = computeShotDirection(rl.Vector2.init(60, 50), rl.Vector2.init(60, 60));
+        try expect(actual.x == 0 and actual.y == -1);
+
+        // check to the down
+        actual = computeShotDirection(rl.Vector2.init(60, 70), rl.Vector2.init(60, 60));
+        try expect(actual.x == 0 and actual.y == 1);
+
+        // check to the equal
+        actual = computeShotDirection(rl.Vector2.init(60, 60), rl.Vector2.init(60, 60));
+        try expect(actual.x == 0 and actual.y == 0);
+    }
+
     /// Update Shots
     /// - loop through all the shots
     /// - determine if active
@@ -132,6 +188,7 @@ pub const ShootingMaster = struct {
                 const offsetV2 = rl.Vector2.init(shotDirectionV.x * speed, shotDirectionV.y * speed);
                 var remove: bool = false;
 
+                shot.previous = shot.drawEnd;
                 shot.drawEnd = u.vector2Add(shot.drawEnd, offsetV2);
                 const playerFrameDimensions: rl.Vector4 = .{
                     .x = game.playerFrame.frameStart.x,
@@ -204,7 +261,7 @@ pub const ShootingMaster = struct {
                         self.shotLength;
                 }
                 shot.drawStart = u.calculatePointOnLine(shot.drawEnd, shot.origin, adjShotLength);
-                rl.DrawLineEx(shot.drawStart, shot.drawEnd, 5, rl.Color.init(255, 255, 255, 255));
+                rl.DrawLineEx(shot.drawStart, shot.drawEnd, 2, rl.Color.init(255, 255, 255, 255));
             }
         }
     }
