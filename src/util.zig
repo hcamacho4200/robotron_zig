@@ -158,7 +158,7 @@ test "generateRandomIntInRange" {
 /// Detect Pixel Overlap
 /// - normalize the overlap rect by subtracting test and actor rects coordinates (in the loop)
 /// - flatten x,y for each rect into an offset from 0 in each mask
-pub fn detectPixelOverlap(actor_mask: [*]u8, rect_actor: Rectangle, test_mask: [*]u8, rect_test: Rectangle, overlap_rect: Rectangle) ?bool {
+pub fn detectPixelOverlap(actor_mask: [*]u8, rect_actor: Rectangle, test_mask: [*]u8, rect_test: Rectangle, overlap_rect: Rectangle) bool {
     const overlap_rect_x = @as(usize, @intFromFloat(overlap_rect.x));
     const overlap_rect_y = @as(usize, @intFromFloat(overlap_rect.y));
     const overlap_rect_width = @as(usize, @intFromFloat(overlap_rect.width));
@@ -202,6 +202,24 @@ pub fn detectPixelOverlap(actor_mask: [*]u8, rect_actor: Rectangle, test_mask: [
         }
     }
     return collision_detection;
+}
+
+test "detectPixelOverlap - single pixel" {
+    const actor_rect = Rectangle.init(56, 56, 1, 1);
+    var actor_mask = [_]u8{1};
+
+    const test_rect = Rectangle.init(56, 56, 3, 3);
+    var test_mask = [_]u8{
+        1, 1, 1,
+        1, 1, 1,
+        1, 1, 1,
+    };
+
+    const overlap_rect = Rectangle.init(56, 56, 1, 1);
+
+    const results = detectPixelOverlap(actor_mask[0..], actor_rect, test_mask[0..], test_rect, overlap_rect);
+    std.debug.print("{any}\n", .{results});
+    try std.testing.expect(results == true);
 }
 
 test "detectPixelOverlap - upper left" {
