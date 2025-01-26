@@ -2,6 +2,8 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
+const u = @import("../util.zig");
+
 pub const ActorInterface = union(enum) {
     sprite: SpriteInterface,
 };
@@ -33,5 +35,9 @@ pub const SpritePosition = struct {
 
     pub fn init(x: f32, y: f32, width: f32, height: f32) SpritePosition {
         return SpritePosition{ .x = x, .y = y, .width = width, .height = height, .center = SpriteCenter.init(x, y, width, height) };
+    }
+
+    pub fn asRectangle(self: *@This()) u.Rectangle {
+        return u.Rectangle.init(self.x, self.y, self.width, self.height);
     }
 };

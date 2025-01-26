@@ -278,3 +278,19 @@ test "detectPixelOverlap - upper left" {
     const results = detectPixelOverlap(actor_mask[0..], actor_rect, test_mask[0..], test_rect, overlap_rect);
     std.debug.print("{any}\n", .{results});
 }
+
+pub fn isVecInRect(pixel: rl.Vector2, rect: Rectangle) bool {
+    if (pixel.x >= rect.x and pixel.x <= rect.x + rect.width) {
+        if (pixel.y >= rect.y and pixel.y <= rect.y + rect.height) {
+            return true;
+        }
+    }
+    return false;
+}
+
+test "isVecInRect" {
+    try expect(isVecInRect(rl.Vector2.init(50, 50), Rectangle.init_with_coords(50, 50, 60, 60)));
+    try expect(isVecInRect(rl.Vector2.init(50, 50), Rectangle.init_with_coords(49, 49, 60, 60)));
+
+    try expect(isVecInRect(rl.Vector2.init(48, 48), Rectangle.init_with_coords(49, 49, 60, 60)) == false);
+}

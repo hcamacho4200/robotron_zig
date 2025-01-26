@@ -5,6 +5,8 @@ const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
+const a = @import("actor_master.zig");
+const a_diamond = @import("actors/diamond.zig");
 const g = @import("game.zig");
 const u = @import("util.zig");
 
@@ -176,27 +178,97 @@ pub const ShootingMaster = struct {
     /// Detect If Actor is Shot
     /// - determine is actor rect overlaps shot start and end
     /// - if in the overlap, check the path in the overlap if a shot hits a pixel.
-    pub fn detectIfActorShot(self: *@This(), actor_rect: u.Rectangle) bool {
+    pub fn detectIfActorShot(self: *@This(), actor_rect: u.Rectangle, actor_mask: [*]u8) bool {
         for (self.shots[0..]) |*shot| {
-            const shot_rect = u.Rectangle.init(shot.drawEnd.x, shot.drawEnd.y, shot.previous.x, shot.previous.y);
+            const shot_rect = u.Rectangle.init_with_coords(shot.drawEnd.x, shot.drawEnd.y, shot.previous.x, shot.previous.y);
             const overlap = u.isOverLappingRectangles(actor_rect, shot_rect);
             const shot_offset = self.buildShotDirection(shot.direction);
 
             if (overlap) |overlap_rect| {
-                _ = overlap_rect;
-                var shot_test_x = shot.previous.x;
-                var shot_test_y = shot.previous.y;
+                const overlap_rect_x = @as(usize, @intFromFloat(overlap_rect.x));
+                const overlap_rect_y = @as(usize, @intFromFloat(overlap_rect.y));
+                const actor_rect_y = @as(usize, @intFromFloat(actor_rect.y));
+                const actor_rect_x = @as(usize, @intFromFloat(actor_rect.x));
+                const actor_rect_width = @as(usize, @intFromFloat(actor_rect.width));
+
+                var shot_test_x = @as(usize, @intFromFloat(shot.previous.x));
+                var shot_test_y = @as(usize, @intFromFloat(shot.previous.y));
 
                 while (true) {
-                    // test shot
+                    // check to see if shot is in the overlap
+                    if (u.isVecInRect(rl.Vector2.init(@as(f32, @floatFromInt(shot_test_x)), @as(f32, @floatFromInt(shot_test_y))), overlap_rect)) {
+                        // test shot
+                        const overlap_offset_x = if (overlap_rect_x >= shot_test_x) overlap_rect_x - shot_test_x else shot_test_x - overlap_rect_x;
+                        const overlap_offset_y = if (overlap_rect_y >= shot_test_y) overlap_rect_y - shot_test_y else shot_test_y - overlap_rect_y;
 
-                    shot_test_x += shot_offset.x;
-                    shot_test_y += shot_offset.y;
+                        const actor_pixel = (overlap_rect_y - actor_rect_y + overlap_offset_y) * actor_rect_width + (overlap_rect_x - actor_rect_x + overlap_offset_x);
+                        std.debug.print("dectIfActorShot {}\n", .{actor_pixel});
+                        const test_pixel = actor_mask[actor_pixel];
+                        if (test_pixel == 1) return true;
+                    }
 
-                    if (shot_test_x == shot.drawEnd.x and shot_test_y == shot.drawEnd.y) break;
+                    // increment position and exit if we are at the overlap
+                    if (shot_offset.x < 0) shot_test_x -= 1 else if (shot_offset.x > 0) shot_test_x += 1;
+                    if (shot_offset.y < 0) shot_test_y -= 1 else if (shot_offset.y > 0) shot_test_y += 1;
+                    if (shot_test_x == overlap_rect_x and shot_test_y == overlap_rect_y) break;
                 }
             }
         }
+        return false;
+    }
+
+    test "detectIfActorShot - Hit" {
+        var shooting_master = ShootingMaster.init();
+        try shooting_master.takeShot(ShootDirection.UP_LEFT, rl.Vector2.init(50, 50));
+        shooting_master.shots[0].drawEnd.x = 30;
+        shooting_master.shots[0].drawEnd.y = 30;
+        shooting_master.shots[0].previous.x = 50;
+        shooting_master.shots[0].previous.y = 50;
+
+        const actor_rect = u.Rectangle.init(40, 40, 10, 10);
+        var actor_mask = [_]u8{
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        };
+
+        const result = shooting_master.detectIfActorShot(actor_rect, actor_mask[0..]);
+        std.debug.print("detectIfActorShot {}\n", .{result});
+        try expect(result == true);
+    }
+
+    test "detectIfActorShot - Miss" {
+        var shooting_master = ShootingMaster.init();
+        try shooting_master.takeShot(ShootDirection.UP_LEFT, rl.Vector2.init(50, 50));
+        shooting_master.shots[0].drawEnd.x = 30;
+        shooting_master.shots[0].drawEnd.y = 30;
+        shooting_master.shots[0].previous.x = 50;
+        shooting_master.shots[0].previous.y = 50;
+
+        const actor_rect = u.Rectangle.init(40, 40, 10, 10);
+        var actor_mask = [_]u8{
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        };
+
+        const result = shooting_master.detectIfActorShot(actor_rect, actor_mask[0..]);
+        std.debug.print("detectIfActorShot {}\n", .{result});
+        try expect(result == false);
     }
 
     /// Update Shots
