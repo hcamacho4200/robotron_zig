@@ -76,13 +76,6 @@ pub fn main() !void {
             }
         }
     }
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 200) });
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(400, 200) });
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(600, 200) });
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(800, 200) });
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 400) });
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 600) });
-    // actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(200, 800) });
     actor_master.listActive();
 
     const playerDownCropTexture = rl.LoadTexture("resources/textures/player-down-crop.png");
@@ -139,6 +132,7 @@ pub fn main() !void {
             player_collision = true;
             player_overlap = ao.overlap;
             std.debug.print("player collision with {} bounded by {}\n", .{ ao.actor, ao.overlap });
+            actor_master.removeActor(ao.actor);
         } else {
             player_collision = false;
         }

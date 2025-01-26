@@ -77,6 +77,14 @@ pub const ActorMaster = struct {
         }
     }
 
+    pub fn removeActor(self: *@This(), actor: *Actor) void {
+        for (0..self.actors.len) |i| {
+            if (&self.actors[i] == actor) {
+                self.actors[i] = Actor{ .empty = Empty.init() };
+            }
+        }
+    }
+
     const CollisionResult = struct { actor: *Actor, overlap: u.Rectangle, pixel: bool };
 
     pub fn checkCollision(self: *@This(), rect_test: u.Rectangle, test_image: ai.ActorImage, rectange_only: bool) ?CollisionResult {
@@ -102,11 +110,9 @@ pub const ActorMaster = struct {
                 if (!rectange_only) {
                     const pixel_collision = u.detectPixelOverlap(actor_mask.mask, rect_actor, test_image.actor_mask.mask, rect_test, overlap_rectangle);
                     std.debug.print("rect collsion {}\n", .{overlap_rectangle});
-                    if (pixel_collision) |pc| {
-                        if (pc) {
-                            std.debug.print("pixel collsion {}\n", .{result});
-                            result = CollisionResult{ .actor = actor, .overlap = overlap_rectangle, .pixel = true };
-                        }
+                    if (pixel_collision) {
+                        std.debug.print("pixel collsion {}\n", .{result});
+                        result = CollisionResult{ .actor = actor, .overlap = overlap_rectangle, .pixel = true };
                     }
                 }
                 return result;

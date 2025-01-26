@@ -173,6 +173,32 @@ pub const ShootingMaster = struct {
         try expect(actual.x == 0 and actual.y == 0);
     }
 
+    /// Detect If Actor is Shot
+    /// - determine is actor rect overlaps shot start and end
+    /// - if in the overlap, check the path in the overlap if a shot hits a pixel.
+    pub fn detectIfActorShot(self: *@This(), actor_rect: u.Rectangle) bool {
+        for (self.shots[0..]) |*shot| {
+            const shot_rect = u.Rectangle.init(shot.drawEnd.x, shot.drawEnd.y, shot.previous.x, shot.previous.y);
+            const overlap = u.isOverLappingRectangles(actor_rect, shot_rect);
+            const shot_offset = self.buildShotDirection(shot.direction);
+
+            if (overlap) |overlap_rect| {
+                _ = overlap_rect;
+                var shot_test_x = shot.previous.x;
+                var shot_test_y = shot.previous.y;
+
+                while (true) {
+                    // test shot
+
+                    shot_test_x += shot_offset.x;
+                    shot_test_y += shot_offset.y;
+
+                    if (shot_test_x == shot.drawEnd.x and shot_test_y == shot.drawEnd.y) break;
+                }
+            }
+        }
+    }
+
     /// Update Shots
     /// - loop through all the shots
     /// - determine if active

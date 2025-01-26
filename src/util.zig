@@ -6,6 +6,7 @@ const rl = rlzb.raylib;
 
 const ai = @import("./actors/image.zig");
 const Diamond = @import("actors/diamond.zig").Diamond;
+const u = @import("util.zig");
 
 pub fn vector2Add(v1: rl.Vector2, v2: rl.Vector2) rl.Vector2 {
     return rl.Vector2{
@@ -81,6 +82,27 @@ pub const Rectangle = struct {
 
     pub fn init(x: f32, y: f32, width: f32, height: f32) Rectangle {
         return Rectangle{ .x = x, .y = y, .width = width, .height = height };
+    }
+
+    /// Init Rectangle with Coordinates
+    /// - determine which pair is the upper left
+    /// - compute the positive width
+    /// - return the rectangle object
+    pub fn init_with_coords(x1: f32, y1: f32, x2: f32, y2: f32) Rectangle {
+        const x_origin = @min(x1, x2);
+        const y_origin = @min(y1, y2);
+        const x_width = @abs(x1 - x2);
+        const y_width = @abs(y1 - y2);
+
+        return Rectangle.init(x_origin, y_origin, x_width, y_width);
+    }
+
+    test "init_with_coord" {
+        var actual: u.Rectangle = undefined;
+
+        actual = init_with_coords(50, 50, 40, 60);
+        std.debug.print("{}\n", .{actual});
+        try expect(actual.x == 40 and actual.y == 50 and actual.width == 10 and actual.height == 10);
     }
 
     pub fn equal(self: *const Rectangle, rect: Rectangle) bool {
