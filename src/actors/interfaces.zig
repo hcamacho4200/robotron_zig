@@ -25,6 +25,13 @@ pub const SpriteCenter = struct {
         return rl.Vector2.init(self.x, self.y);
     }
 };
+pub const SpriteEdge = struct {
+    start: rl.Vector2,
+    end: rl.Vector2,
+    pub fn init(start: rl.Vector2, end: rl.Vector2) SpriteEdge {
+        return SpriteEdge{ .start = start, .end = end };
+    }
+};
 pub const SpriteInterface = struct { handleDraw: *const fn (self: *anyopaque) void, handleUpdate: *const fn (self: *anyopaque) void };
 pub const SpritePosition = struct {
     x: f32,
@@ -39,5 +46,14 @@ pub const SpritePosition = struct {
 
     pub fn asRectangle(self: *@This()) u.Rectangle {
         return u.Rectangle.init(self.x, self.y, self.width, self.height);
+    }
+
+    pub fn getEdges(self: *const @This()) [4]SpriteEdge {
+        return .{
+            SpriteEdge.init(rl.Vector2.init(self.x, self.y), rl.Vector2.init(self.x + self.width, self.y)),
+            SpriteEdge.init(rl.Vector2.init(self.x, self.y), rl.Vector2.init(self.x, self.y + self.height)),
+            SpriteEdge.init(rl.Vector2.init(self.x + self.width, self.y), rl.Vector2.init(self.x + self.width, self.y + self.height)),
+            SpriteEdge.init(rl.Vector2.init(self.x, self.y + self.height), rl.Vector2.init(self.x + self.width, self.y + self.height)),
+        };
     }
 };

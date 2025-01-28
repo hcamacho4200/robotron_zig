@@ -7,6 +7,7 @@ const rg = rlzb.raygui;
 
 const d = @import("./actors/diamond.zig");
 const ai = @import("./actors/image.zig");
+const i = @import("./actors//interfaces.zig");
 const u = @import("util.zig");
 
 const Diamond = @import("./actors/diamond.zig").Diamond;
@@ -37,7 +38,6 @@ pub const ActorMaster = struct {
         for (self.actors[0..]) |*actor| {
             switch (actor.*) {
                 .empty => {
-                    std.debug.print("Found empty {}\n", .{actor});
                     actor.* = new_actor;
                     return;
                 },
@@ -45,6 +45,19 @@ pub const ActorMaster = struct {
             }
         }
         std.debug.print("Unable to add actor\n", .{});
+    }
+
+    pub fn countActive(self: *@This()) usize {
+        var size: usize = 0;
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .empty => {},
+                else => {
+                    size += 1;
+                },
+            }
+        }
+        return size;
     }
 
     pub fn listActive(self: *@This()) void {
@@ -78,9 +91,9 @@ pub const ActorMaster = struct {
     }
 
     pub fn removeActor(self: *@This(), actor: *Actor) void {
-        for (0..self.actors.len) |i| {
-            if (&self.actors[i] == actor) {
-                self.actors[i] = Actor{ .empty = Empty.init() };
+        for (0..self.actors.len) |idx| {
+            if (&self.actors[idx] == actor) {
+                self.actors[idx] = Actor{ .empty = Empty.init() };
             }
         }
     }
@@ -120,23 +133,61 @@ pub const ActorMaster = struct {
         }
         return null;
     }
+
+    pub fn getEdgesFromActor(self: *const @This(), actor: *const Actor) ?[4]i.SpriteEdge {
+        _ = self;
+        switch (actor.*) {
+            .diamond => {
+                std.debug.print("handled actor {}\n", .{actor});
+                return actor.diamond.sprite_position.getEdges();
+            },
+            else => {
+                return null;
+            },
+        }
+    }
+
+    /// Gather Actors by Line
+    /// Looking for actors that intersect a line segment, ie: shot
+    /// - build line
+    /// - gather edges from actor
+    /// - test if the edges and the line intersect
+    /// - add to action_master (tmp)
+    /// - return
+    /// - TODO: sort the CD actors by distance from the center of player.
+    pub fn gatherActorsByLine(self: *@This(), start: rl.Vector2, end: rl.Vector2) std.ArrayList(Actor) {
+        var found_actors = std.ArrayList(Actor).init(std.heap.page_allocator);
+        defer found_actors.deinit();
+        std.debug.print("test {} {}\n", .{ start, end });
+        for (self.actors) |actor| {
+            const optional_edges = self.getEdgesFromActor(&actor);
+            if (optional_edges) |edges| {
+                for (edges[0..]) |edge| {
+                    var collision_point = rl.Vector2.init(0, 0);
+                    if (rl.CheckCollisionLines(start, end, edge.start, edge.end, &collision_point)) {
+                        std.debug.print("found actor {}\n", .{actor});
+                        found_actors.append(actor) catch |err| std.debug.print("Unable to add actor {}", .{err});
+                        break;
+                    }
+                }
+            }
+        }
+        return found_actors;
+    }
+
+    test "Gather Actors By Line" {
+        var actor_master = ActorMaster.init();
+        actor_master.addActor(Actor{ .diamond = Diamond.init(100, 100) });
+        actor_master.addActor(Actor{ .diamond = Diamond.init(400, 400) });
+        actor_master.addActor(Actor{ .diamond = Diamond.init(200, 200) });
+        actor_master.addActor(Actor{ .diamond = Diamond.init(500, 500) });
+        actor_master.addActor(Actor{ .diamond = Diamond.init(509, 509) });
+        actor_master.addActor(Actor{ .diamond = Diamond.init(300, 300) });
+
+        const start = rl.Vector2.init(560, 560);
+        const end = rl.Vector2.init(510, 510);
+
+        const actual = actor_master.gatherActorsByLine(start, end);
+        try expect(actual.items.len == 2);
+    }
 };
-
-// zig fmt: on
-
-test "This is a test" {
-    @setEvalBranchQuota(10_000);
-    var actor_master = ActorMaster.init();
-    actor_master.addActor(Actor{ .diamond = Diamond.init(100, 200) });
-    actor_master.addActor(Actor{ .mine = Mine.init(0, 0) });
-    actor_master.listActive();
-    actor_master.handleUpdate();
-    try expect(true);
-}
-
-test "Checking" {
-    const TestType = struct { active: bool };
-    var testType = TestType{ .active = true };
-    testType.active = false;
-    std.debug.print("{}", .{testType});
-}

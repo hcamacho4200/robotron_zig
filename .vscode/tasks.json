@@ -55,7 +55,6 @@
         "label": "Prelaunch Tasks",
         "dependsOn": [
           "Build Zig",
-          "Run Zig Unit Tests"
         ],
         "dependsOrder": "sequence"
       }
