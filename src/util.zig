@@ -294,3 +294,72 @@ test "isVecInRect" {
 
     try expect(isVecInRect(rl.Vector2.init(48, 48), Rectangle.init_with_coords(49, 49, 60, 60)) == false);
 }
+
+const Line = struct {
+    start: rl.Vector2,
+    end: rl.Vector2,
+
+    pub fn init(start: rl.Vector2, end: rl.Vector2) Line {
+        return Line{ .start = start, .end = end };
+    }
+};
+
+/// Detect Line Pixel Overlap
+/// Given a line, does any pixel overlap the line
+/// - determine a rect overlap for this actor and shot line
+///
+/// - determine shot line coordinate
+/// - determine if mask is a 1 at that coordinate.
+pub fn detectLinePixelOverlap(actor_rect: Rectangle, actor_mask: [*]u8, shot_line: Line) bool {
+    const offset_x: f32 = if (shot_line.start.x < shot_line.end.x) 1 else if (shot_line.start.x > shot_line.end.x) -1 else 0;
+    const offset_y: f32 = if (shot_line.start.y < shot_line.end.y) 1 else if (shot_line.start.y > shot_line.end.y) -1 else 0;
+    const actor_adj_rect = Rectangle.init(0, 0, actor_rect.width, actor_rect.height);
+
+    var line_pos = shot_line.start;
+    while (true) {
+        const line_pos_adj_x = line_pos.x - actor_rect.x;
+        const line_pos_adj_y = line_pos.y - actor_rect.y;
+
+        if (isVecInRect(rl.Vector2.init(line_pos_adj_x, line_pos_adj_y), actor_adj_rect)) {
+            std.debug.print("inside: ", .{});
+            const pixel = line_pos_adj_y * actor_adj_rect.width + line_pos_adj_x;
+            const hit = actor_mask[@as(usize, @intFromFloat(pixel))];
+            std.debug.print(" {} ", .{hit});
+        } else {
+            std.debug.print("outside: ", .{});
+        }
+
+        std.debug.print("line_pos {any} adj_x {any} adj_y {any}\n", .{ line_pos, line_pos_adj_x, line_pos_adj_y });
+
+        // const test_pixel = (overlap_rect_y - actor_rect_y + overlap_offset_y) * actor_rect_width + (overlap_rect_x - actor_rect_x + overlap_offset_x);
+
+        line_pos.x += offset_x;
+        line_pos.y += offset_y;
+
+        if (line_pos.x == shot_line.end.x + offset_x and line_pos.y == shot_line.end.y + offset_y) break;
+    }
+    return true;
+}
+
+test "detectLinePixelOverlap" {
+    const actor_rect = Rectangle.init(50, 50, 10, 10);
+    var actor_mask = [_]u8{
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    };
+
+    const shot_line = Line.init(rl.Vector2.init(70, 70), rl.Vector2.init(40, 40));
+    const actual = detectLinePixelOverlap(actor_rect, actor_mask[0..], shot_line);
+
+    std.debug.print("test {}\n", .{actual});
+
+    try expect(false);
+}
