@@ -53,7 +53,7 @@ pub fn main() !void {
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
-    for (0..10) |_| {
+    for (0..100) |_| {
         const player_frame_x_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.x));
         const player_frame_x_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.x + game.playerFrame.frameSize.x));
         const player_frame_y_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.y));
@@ -178,6 +178,19 @@ pub fn main() !void {
         // Draw the player overlap collision
         if (player_collision) {
             rl.DrawRectangle(@intFromFloat(player_overlap.x), @intFromFloat(player_overlap.y), @intFromFloat(player_overlap.width), @intFromFloat(player_overlap.height), rl.Color.init(255, 255, 255, 150));
+        }
+
+        // Handle Shot Collisions
+        for (player.shootingMaster.shots[0..]) |*shot| {
+            if (shot.active == true) {
+                const actors_by_line = try actor_master.gatherActorsByLine(shot.drawStart, shot.drawEnd);
+                defer actors_by_line.deinit();
+                if (actors_by_line.items.len > 0) {
+                    shot.active = false;
+                    player.shootingMaster.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
+                    actor_master.removeActor(actors_by_line.items[0]);
+                }
+            }
         }
 
         // Handle debugging info

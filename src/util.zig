@@ -280,8 +280,8 @@ test "detectPixelOverlap - upper left" {
 }
 
 pub fn isVecInRect(pixel: rl.Vector2, rect: Rectangle) bool {
-    if (pixel.x >= rect.x and pixel.x <= rect.x + rect.width) {
-        if (pixel.y >= rect.y and pixel.y <= rect.y + rect.height) {
+    if (pixel.x >= rect.x and pixel.x < rect.x + rect.width) {
+        if (pixel.y >= rect.y and pixel.y < rect.y + rect.height) {
             return true;
         }
     }
@@ -289,10 +289,11 @@ pub fn isVecInRect(pixel: rl.Vector2, rect: Rectangle) bool {
 }
 
 test "isVecInRect" {
-    try expect(isVecInRect(rl.Vector2.init(50, 50), Rectangle.init_with_coords(50, 50, 60, 60)));
-    try expect(isVecInRect(rl.Vector2.init(50, 50), Rectangle.init_with_coords(49, 49, 60, 60)));
+    try expect(isVecInRect(rl.Vector2.init(50, 50), Rectangle.init(50, 50, 60, 60)) == true);
+    try expect(isVecInRect(rl.Vector2.init(109, 109), Rectangle.init(50, 50, 60, 60)) == true);
 
-    try expect(isVecInRect(rl.Vector2.init(48, 48), Rectangle.init_with_coords(49, 49, 60, 60)) == false);
+    try expect(isVecInRect(rl.Vector2.init(110, 110), Rectangle.init(50, 50, 60, 60)) == false);
+    try expect(isVecInRect(rl.Vector2.init(48, 48), Rectangle.init(50, 50, 60, 60)) == false);
 }
 
 const Line = struct {
@@ -325,20 +326,19 @@ pub fn detectLinePixelOverlap(actor_rect: Rectangle, actor_mask: [*]u8, shot_lin
             const pixel = line_pos_adj_y * actor_adj_rect.width + line_pos_adj_x;
             const hit = actor_mask[@as(usize, @intFromFloat(pixel))];
             std.debug.print(" {} ", .{hit});
+            if (hit == 1) return true;
         } else {
             std.debug.print("outside: ", .{});
         }
 
         std.debug.print("line_pos {any} adj_x {any} adj_y {any}\n", .{ line_pos, line_pos_adj_x, line_pos_adj_y });
 
-        // const test_pixel = (overlap_rect_y - actor_rect_y + overlap_offset_y) * actor_rect_width + (overlap_rect_x - actor_rect_x + overlap_offset_x);
-
         line_pos.x += offset_x;
         line_pos.y += offset_y;
 
         if (line_pos.x == shot_line.end.x + offset_x and line_pos.y == shot_line.end.y + offset_y) break;
     }
-    return true;
+    return false;
 }
 
 test "detectLinePixelOverlap" {
@@ -361,5 +361,5 @@ test "detectLinePixelOverlap" {
 
     std.debug.print("test {}\n", .{actual});
 
-    try expect(false);
+    try expect(actual == true);
 }

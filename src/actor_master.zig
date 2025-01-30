@@ -91,6 +91,7 @@ pub const ActorMaster = struct {
     }
 
     pub fn removeActor(self: *@This(), actor: *Actor) void {
+        std.debug.print("removing actor {}", .{actor});
         for (0..self.actors.len) |idx| {
             if (&self.actors[idx] == actor) {
                 self.actors[idx] = Actor{ .empty = Empty.init() };
@@ -138,7 +139,6 @@ pub const ActorMaster = struct {
         _ = self;
         switch (actor.*) {
             .diamond => {
-                std.debug.print("handled actor {}\n", .{actor});
                 return actor.diamond.sprite_position.getEdges();
             },
             else => {
@@ -155,21 +155,24 @@ pub const ActorMaster = struct {
     /// - add to action_master (tmp)
     /// - return
     /// - TODO: sort the CD actors by distance from the center of player.
-    pub fn gatherActorsByLine(self: *@This(), start: rl.Vector2, end: rl.Vector2) std.ArrayList(Actor) {
-        var found_actors = std.ArrayList(Actor).init(std.heap.page_allocator);
-        defer found_actors.deinit();
-        std.debug.print("test {} {}\n", .{ start, end });
-        for (self.actors) |actor| {
-            const optional_edges = self.getEdgesFromActor(&actor);
-            if (optional_edges) |edges| {
-                for (edges[0..]) |edge| {
-                    var collision_point = rl.Vector2.init(0, 0);
-                    if (rl.CheckCollisionLines(start, end, edge.start, edge.end, &collision_point)) {
-                        std.debug.print("found actor {}\n", .{actor});
-                        found_actors.append(actor) catch |err| std.debug.print("Unable to add actor {}", .{err});
-                        break;
+    pub fn gatherActorsByLine(self: *@This(), start: rl.Vector2, end: rl.Vector2) !*std.ArrayList(*Actor) {
+        const found_actors = try std.heap.page_allocator.create(std.ArrayList(*Actor));
+        found_actors.* = std.ArrayList(*Actor).init(std.heap.page_allocator);
+
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .diamond => {
+                    const optional_edges = self.getEdgesFromActor(actor);
+                    if (optional_edges) |edges| {
+                        for (edges[0..]) |edge| {
+                            var collision_point = rl.Vector2.init(0, 0);
+                            if (rl.CheckCollisionLines(start, end, edge.start, edge.end, &collision_point)) {
+                                found_actors.*.append(@constCast(actor)) catch |err| std.debug.print("Unable to add actor {}", .{err});
+                            }
+                        }
                     }
-                }
+                },
+                else => {},
             }
         }
         return found_actors;
@@ -177,17 +180,15 @@ pub const ActorMaster = struct {
 
     test "Gather Actors By Line" {
         var actor_master = ActorMaster.init();
-        actor_master.addActor(Actor{ .diamond = Diamond.init(100, 100) });
-        actor_master.addActor(Actor{ .diamond = Diamond.init(400, 400) });
-        actor_master.addActor(Actor{ .diamond = Diamond.init(200, 200) });
-        actor_master.addActor(Actor{ .diamond = Diamond.init(500, 500) });
-        actor_master.addActor(Actor{ .diamond = Diamond.init(509, 509) });
-        actor_master.addActor(Actor{ .diamond = Diamond.init(300, 300) });
+        actor_master.addActor(Actor{ .diamond = Diamond.init(535, 560) });
 
         const start = rl.Vector2.init(560, 560);
-        const end = rl.Vector2.init(510, 510);
+        const end = rl.Vector2.init(560, 602);
 
-        const actual = actor_master.gatherActorsByLine(start, end);
-        try expect(actual.items.len == 2);
+        const actual = try actor_master.gatherActorsByLine(start, end);
+        std.debug.print("output {} {any}\n", .{ actual.items.len, actual.items[0] });
+
+        try expect(actual.items.len == 1);
+        try expect(false);
     }
 };

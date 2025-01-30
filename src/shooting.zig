@@ -295,14 +295,14 @@ pub const ShootingMaster = struct {
                     .w = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y,
                 };
 
+                std.log.info("update shot {}", .{shot});
+
                 if (shot.drawEnd.x < playerFrameDimensions.x or shot.drawEnd.x > playerFrameDimensions.z) remove = true;
                 if (shot.drawEnd.y < playerFrameDimensions.y or shot.drawEnd.y > playerFrameDimensions.w) remove = true;
 
                 if (remove) {
                     shot.active = false;
                     self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
-                    const activeShots = self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets;
-                    std.log.info("removing shot {} {}", .{ activeShots, shot });
                 }
             }
         }
@@ -333,9 +333,7 @@ pub const ShootingMaster = struct {
 
         for (self.shots[0..]) |*shot| {
             if (!shot.active) {
-                const activeShots = self.shootingDirectionStates[@intFromEnum(direction)].numActiveBullets;
                 shot.* = Shot.init(direction, origin);
-                std.log.info("added shot {} {}", .{ activeShots, shot });
                 return;
             }
         }
