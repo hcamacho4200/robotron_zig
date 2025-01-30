@@ -30,5 +30,8 @@
     - create an enum for the sprites
     - create an actor structure with the topleft and lower right rectangle coordinates
     - position using the center position and set the RTL and RBR with a function
+- shot collision detection
+    - concerned with ordering, need to get the closest 1st.
+    
 
         
