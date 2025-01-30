@@ -66,6 +66,7 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        // .filter = "Gather Actors By Line",
     });
 
     tests.root_module.addImport("rlzb", bindings.module("raylib-zig-bindings"));
