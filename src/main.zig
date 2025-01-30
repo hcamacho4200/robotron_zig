@@ -186,9 +186,27 @@ pub fn main() !void {
                 const actors_by_line = try actor_master.gatherActorsByLine(shot.drawStart, shot.drawEnd);
                 defer actors_by_line.deinit();
                 if (actors_by_line.items.len > 0) {
+                    const actor = actors_by_line.items[0];
+                    var actor_rect: ?u.Rectangle = undefined;
+                    var actor_mask: ?ai.ActorMask = undefined;
+                    switch (actor.*) {
+                        .diamond => |*sprite| {
+                            actor_rect = sprite.sprite_position.asRectangle();
+                            actor_mask = a_diamond.actor_image.actor_mask;
+                        },
+                        else => {},
+                    }
+
+                    // if (actor_rect) |rect| {
+                    // if (actor_mask) |mask| {
+                    // const pixel_overlap = u.detectLinePixelOverlap(rect, mask.mask, u.Line.init(shot.drawStart, shot.drawEnd));
+                    // if (pixel_overlap) {
+                    actor_master.removeActor(actors_by_line.items[0]);
                     shot.active = false;
                     player.shootingMaster.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
-                    actor_master.removeActor(actors_by_line.items[0]);
+                    // }
+                    // }
+                    // }
                 }
             }
         }

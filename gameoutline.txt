@@ -32,6 +32,8 @@
     - position using the center position and set the RTL and RBR with a function
 - shot collision detection
     - concerned with ordering, need to get the closest 1st.
+    - rewrote, gatherActorsByLine in actor master finds any actors that intersected the shot geometery
+    - once there is an intersection, if only 1 then pixel compare.
     
 
         

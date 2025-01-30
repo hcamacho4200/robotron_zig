@@ -296,7 +296,7 @@ test "isVecInRect" {
     try expect(isVecInRect(rl.Vector2.init(48, 48), Rectangle.init(50, 50, 60, 60)) == false);
 }
 
-const Line = struct {
+pub const Line = struct {
     start: rl.Vector2,
     end: rl.Vector2,
 
@@ -315,6 +315,8 @@ pub fn detectLinePixelOverlap(actor_rect: Rectangle, actor_mask: [*]u8, shot_lin
     const offset_x: f32 = if (shot_line.start.x < shot_line.end.x) 1 else if (shot_line.start.x > shot_line.end.x) -1 else 0;
     const offset_y: f32 = if (shot_line.start.y < shot_line.end.y) 1 else if (shot_line.start.y > shot_line.end.y) -1 else 0;
     const actor_adj_rect = Rectangle.init(0, 0, actor_rect.width, actor_rect.height);
+    const len_x = @abs(shot_line.start.x - shot_line.end.x);
+    const len_y = @abs(shot_line.start.x - shot_line.end.x);
 
     var line_pos = shot_line.start;
     while (true) {
@@ -336,7 +338,7 @@ pub fn detectLinePixelOverlap(actor_rect: Rectangle, actor_mask: [*]u8, shot_lin
         line_pos.x += offset_x;
         line_pos.y += offset_y;
 
-        if (line_pos.x == shot_line.end.x + offset_x and line_pos.y == shot_line.end.y + offset_y) break;
+        if (@abs(shot_line.start.x - line_pos.x) >= len_x and @abs(shot_line.start.y - line_pos.y) >= len_y) break;
     }
     return false;
 }
