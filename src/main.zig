@@ -53,7 +53,7 @@ pub fn main() !void {
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
-    for (0..100) |_| {
+    for (0..50) |_| {
         const player_frame_x_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.x));
         const player_frame_x_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.x + game.playerFrame.frameSize.x));
         const player_frame_y_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.y));
@@ -67,11 +67,20 @@ pub fn main() !void {
 
             // check distance from player.
             const distance_from_player = u.calculateDistance(player.center.toVector2(), new_actor.diamond.sprite_position.center.toVector2());
+            const padding = 5;
             if (distance_from_player > 400) {
-                const actor_collided_with = actor_master.checkCollision(rect_test, a_diamond.actor_image, true);
-                if (actor_collided_with) |_| {} else {
-                    actor_master.addActor(new_actor);
-                    break;
+                if (rect_test.x + padding > @as(f32, @floatFromInt(player_frame_x_min)) and
+                    rect_test.y + padding > @as(f32, @floatFromInt(player_frame_y_min)) and
+                    rect_test.x + rect_test.width + padding < @as(f32, @floatFromInt(player_frame_x_max)) and
+                    rect_test.y + rect_test.height + padding < @as(f32, @floatFromInt(player_frame_y_max)))
+                {
+
+                    // Check if new actor collides with any other actor.
+                    const actor_collided_with = actor_master.checkCollision(rect_test, a_diamond.actor_image, true);
+                    if (actor_collided_with) |_| {} else {
+                        actor_master.addActor(new_actor);
+                        break;
+                    }
                 }
             }
         }
