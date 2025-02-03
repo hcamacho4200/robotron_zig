@@ -13,6 +13,7 @@ const u = @import("util.zig");
 const a = @import("actor_master.zig");
 const ai = @import("./actors/image.zig");
 const a_diamond = @import("./actors/diamond.zig");
+const sh = @import("shooting.zig");
 
 // zig fmt: on
 
@@ -191,7 +192,7 @@ pub fn main() !void {
 
         // Handle Shot Collisions
         for (player.shootingMaster.shots[0..]) |*shot| {
-            if (shot.active == true) {
+            if (shot.active == sh.ShotStatus.ACTIVE) {
                 const actors_by_line = try actor_master.gatherActorsByLine(shot.drawStart, shot.drawEnd);
                 defer actors_by_line.deinit();
                 if (actors_by_line.items.len > 0) {
@@ -211,8 +212,8 @@ pub fn main() !void {
                     // const pixel_overlap = u.detectLinePixelOverlap(rect, mask.mask, u.Line.init(shot.drawStart, shot.drawEnd));
                     // if (pixel_overlap) {
                     actor_master.removeActor(actors_by_line.items[0]);
-                    shot.active = false;
-                    player.shootingMaster.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
+                    shot.active = sh.ShotStatus.REMOVING;
+
                     // }
                     // }
                     // }

@@ -16,40 +16,25 @@ pub var actor_image: ActorImage = undefined;
 // Define an enum for player direction
 pub const Direction = enum { UP, DOWN, LEFT, RIGHT };
 
-// zig fmt: off
-pub const Player = struct { 
-    name: []const u8, 
-    position: struct { 
-        x: f32, 
+pub const Player = struct {
+    name: []const u8,
+    position: struct {
+        x: f32,
         y: f32,
-        valid: bool, 
+        valid: bool,
     },
-    center: i.SpriteCenter, 
+    center: i.SpriteCenter,
     baseSpeed: f32,
-    scaledSpeed: f32, 
-    dimensions: struct { 
-        width: f32, 
-        height: f32 
-    },
+    scaledSpeed: f32,
+    dimensions: struct { width: f32, height: f32 },
     shootingMaster: s.ShootingMaster,
 
     pub fn init() Player {
-        return Player { 
-            .name = "Robotron", 
-            .baseSpeed = 0,
-            .scaledSpeed = 0, 
-            .position = .{ 
-                .x = 0, 
-                .y = 0,
-                .valid = false, 
-            },
-            .center =  i.SpriteCenter.init(0, 0, 0, 0), 
-            .dimensions = .{ 
-                .width = 20, 
-                .height = 40 
-            },
-            .shootingMaster = s.ShootingMaster.init() 
-        };
+        return Player{ .name = "Robotron", .baseSpeed = 0, .scaledSpeed = 0, .position = .{
+            .x = 0,
+            .y = 0,
+            .valid = false,
+        }, .center = i.SpriteCenter.init(0, 0, 0, 0), .dimensions = .{ .width = 20, .height = 40 }, .shootingMaster = s.ShootingMaster.init() };
     }
 
     pub fn updatePlayerScale(self: *@This(), height: c_int) void {
@@ -66,31 +51,16 @@ pub const Player = struct {
 
         // Player Shooting
         var shootingDirection: s.ShootDirection = s.ShootDirection.IDLE;
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.UP_LEFT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.UP_RIGHT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.IDLE
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.UP
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.DOWN_LEFT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.DOWN_RIGHT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.IDLE
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.DOWN
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.LEFT
-        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.RIGHT
-        else shootingDirection = s.ShootDirection.IDLE;
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.UP_LEFT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.UP_RIGHT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.IDLE else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.UP else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.DOWN_LEFT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.DOWN_RIGHT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.IDLE else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.DOWN else if (rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.LEFT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.RIGHT else shootingDirection = s.ShootDirection.IDLE;
 
         if (shootingDirection != s.ShootDirection.IDLE) {
             if (self.shootingMaster.canShoot(shootingDirection)) {
-                const shootingDirectionStatus = self.shootingMaster.shootingDirectionStates[@intFromEnum(shootingDirection)]; 
-                std.log.info("shootingDirection {} {d} {} {} ", .{
-                    shootingDirection, 
-                    std.time.milliTimestamp(), 
-                    shootingDirectionStatus.timeSinceLastShot, 
-                    shootingDirectionStatus.numActiveBullets
-                });
+                const shootingDirectionStatus = self.shootingMaster.shootingDirectionStates[@intFromEnum(shootingDirection)];
+                std.log.info("shootingDirection {} {d} {} {} ", .{ shootingDirection, std.time.milliTimestamp(), shootingDirectionStatus.timeSinceLastShot, shootingDirectionStatus.numActiveBullets });
                 try self.shootingMaster.takeShot(shootingDirection, rl.Vector2.init(self.center.x, self.center.y));
             }
             shootingDirection = s.ShootDirection.IDLE;
-        }   
+        }
     }
 
     pub fn handlePlayerShots(self: *@This(), game: g.Game, deltaTime: f32) void {
@@ -109,7 +79,6 @@ pub const Player = struct {
         // Update Player Center.
         self.center.x = self.position.x + self.dimensions.width / 2;
         self.center.y = self.position.y + self.dimensions.height / 2;
-
     }
 
     pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) void {
@@ -128,13 +97,12 @@ pub const Player = struct {
             },
             Direction.RIGHT => {
                 const newPosition = self.position.x + speed;
-                std.log.info("RIGHT {d} {d} {d} {d}", .{self.position.x, newPosition, newPosition + self.dimensions.width, width});
+                std.log.info("RIGHT {d} {d} {d} {d}", .{ self.position.x, newPosition, newPosition + self.dimensions.width, width });
                 x = if ((newPosition + self.dimensions.width < width)) newPosition else width - self.dimensions.width;
             },
             Direction.UP => {
                 const newPosition = self.position.y - speed;
                 y = if ((newPosition > game.playerFrame.frameStart.y)) newPosition else game.playerFrame.frameStart.y;
-
             },
             Direction.DOWN => {
                 const newPosition = self.position.y + speed;
@@ -145,4 +113,3 @@ pub const Player = struct {
         self.setPlayerPosition(x, y);
     }
 };
-// zig fmt: on

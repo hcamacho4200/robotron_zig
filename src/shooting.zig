@@ -22,20 +22,26 @@ pub const ShootingDirectionState = struct {
     }
 };
 
+pub const ShotStatus = enum {
+    ACTIVE, // fully active, end is being advanced
+    REMOVING, // end is stopped, and start is being advanced until caught up with end
+    IDLE, // shot is idle no longer being rendered
+};
+
 pub const Shot = struct {
     origin: rl.Vector2,
     drawStart: rl.Vector2,
     drawEnd: rl.Vector2,
     direction: ShootDirection,
     previous: rl.Vector2,
-    active: bool,
+    active: ShotStatus,
 
     pub fn init(direction: ShootDirection, origin: rl.Vector2) Shot {
-        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .previous = origin, .active = true };
+        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .previous = origin, .active = ShotStatus.ACTIVE };
     }
 
     pub fn init_inactive(direction: ShootDirection, origin: rl.Vector2) Shot {
-        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .previous = origin, .active = false };
+        return Shot{ .origin = origin, .drawStart = origin, .drawEnd = origin, .direction = direction, .previous = origin, .active = ShotStatus.IDLE };
     }
 };
 
@@ -280,32 +286,98 @@ pub const ShootingMaster = struct {
     /// - drawlineEx from start to end.
     pub fn updateShots(self: *@This(), game: g.Game, deltaTime: f32) void {
         for (self.shots[0..]) |*shot| {
-            if (shot.active) {
-                const speed = self.scaledSpeed * deltaTime;
-                const shotDirectionV = self.buildShotDirection(shot.direction);
-                const offsetV2 = rl.Vector2.init(shotDirectionV.x * speed, shotDirectionV.y * speed);
-                var remove: bool = false;
+            const speed = self.scaledSpeed * deltaTime;
+            const shotDirectionV = self.buildShotDirection(shot.direction);
+            const offsetV2 = rl.Vector2.init(shotDirectionV.x * speed, shotDirectionV.y * speed);
 
-                shot.previous = shot.drawEnd;
-                shot.drawEnd = u.vector2Add(shot.drawEnd, offsetV2);
-                const playerFrameDimensions: rl.Vector4 = .{
-                    .x = game.playerFrame.frameStart.x,
-                    .y = game.playerFrame.frameStart.y,
-                    .z = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x,
-                    .w = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y,
-                };
+            switch (shot.active) {
+                .ACTIVE => {
+                    var remove: bool = false;
 
-                std.log.info("update shot {}", .{shot});
+                    shot.previous = shot.drawEnd;
+                    shot.drawEnd = u.vector2Add(shot.drawEnd, offsetV2);
 
-                if (shot.drawEnd.x < playerFrameDimensions.x or shot.drawEnd.x > playerFrameDimensions.z) remove = true;
-                if (shot.drawEnd.y < playerFrameDimensions.y or shot.drawEnd.y > playerFrameDimensions.w) remove = true;
+                    var adjShotLength: f32 = undefined;
+                    const distanceFromOrigin = u.calculateDistance(shot.drawEnd, shot.origin);
+                    if (distanceFromOrigin > self.minDistanceForTail) {
+                        adjShotLength = if (distanceFromOrigin - self.minDistanceForTail < self.shotLength)
+                            distanceFromOrigin - self.minDistanceForTail
+                        else
+                            self.shotLength;
+                    }
+                    shot.drawStart = u.calculatePointOnLine(shot.drawEnd, shot.origin, adjShotLength);
 
-                if (remove) {
-                    shot.active = false;
+                    const playerFrameDimensions: rl.Vector4 = .{
+                        .x = game.playerFrame.frameStart.x,
+                        .y = game.playerFrame.frameStart.y,
+                        .z = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x,
+                        .w = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y,
+                    };
+
+                    std.log.info("update shot {}", .{shot});
+
+                    if (shot.drawEnd.x < playerFrameDimensions.x) {
+                        remove = true;
+                        shot.drawEnd.x = playerFrameDimensions.x;
+                    } else if (shot.drawEnd.x > playerFrameDimensions.z) {
+                        remove = true;
+                        shot.drawEnd.x = playerFrameDimensions.z;
+                    }
+
+                    if (shot.drawEnd.y < playerFrameDimensions.y) {
+                        remove = true;
+                        shot.drawEnd.y = playerFrameDimensions.y;
+                    } else if (shot.drawEnd.y > playerFrameDimensions.w) {
+                        remove = true;
+                        shot.drawEnd.y = playerFrameDimensions.w;
+                    }
+
+                    if (remove) {
+                        shot.active = ShotStatus.REMOVING;
+                    }
+                },
+                .REMOVING => {
+                    shot.active = ShotStatus.IDLE;
                     self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
-                }
+
+                    // if (isShotFinished(shot.drawStart, shot.drawEnd, offsetV2)) {
+                    //     shot.active = ShotStatus.IDLE;
+                    //     self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
+                    //     std.debug.print("removing {}", .{shot});
+                    //     shot.drawStart.x = shot.drawEnd.x;
+                    //     shot.drawStart.y = shot.drawEnd.y;
+                    // } else shot.drawStart = u.vector2Add(shot.drawStart, offsetV2);
+                },
+                .IDLE => {},
             }
         }
+    }
+
+    /// Is Shot Finished
+    /// - test if start has caught up with end
+    /// - depends on offset direction
+    fn isShotFinished(start: rl.Vector2, end: rl.Vector2, offset: rl.Vector2) bool {
+        var result_x = false;
+        var result_y = false;
+
+        if (offset.x >= 0 and start.x >= end.x) result_x = true else if (offset.x < 0 and start.x <= end.x) result_x = true;
+        if (offset.y >= 0 and start.y >= end.y) result_y = true else if (offset.y < 0 and start.y <= end.y) result_y = true;
+
+        return result_x and result_y;
+    }
+
+    test "isShotFinished test" {
+        try expect(isShotFinished(rl.Vector2.init(0, 0), rl.Vector2.init(10, 0), rl.Vector2.init(1, 0)) == false);
+        try expect(isShotFinished(rl.Vector2.init(10, 0), rl.Vector2.init(10, 0), rl.Vector2.init(1, 0)) == true);
+
+        try expect(isShotFinished(rl.Vector2.init(10, 0), rl.Vector2.init(0, 0), rl.Vector2.init(-1, 0)) == false);
+        try expect(isShotFinished(rl.Vector2.init(0, 0), rl.Vector2.init(0, 0), rl.Vector2.init(-1, 0)) == true);
+
+        try expect(isShotFinished(rl.Vector2.init(0, 0), rl.Vector2.init(0, 10), rl.Vector2.init(0, 1)) == false);
+        try expect(isShotFinished(rl.Vector2.init(0, 10), rl.Vector2.init(0, 10), rl.Vector2.init(0, 1)) == true);
+
+        try expect(isShotFinished(rl.Vector2.init(0, 10), rl.Vector2.init(0, 0), rl.Vector2.init(0, -1)) == false);
+        try expect(isShotFinished(rl.Vector2.init(0, 0), rl.Vector2.init(0, 0), rl.Vector2.init(0, -1)) == true);
     }
 
     /// Determine if the player can shoot in a particular direction
@@ -332,7 +404,7 @@ pub const ShootingMaster = struct {
         self.shootingDirectionStates[@intFromEnum(direction)].timeSinceLastShot = std.time.milliTimestamp();
 
         for (self.shots[0..]) |*shot| {
-            if (!shot.active) {
+            if (shot.active == ShotStatus.IDLE) {
                 shot.* = Shot.init(direction, origin);
                 return;
             }
@@ -347,17 +419,11 @@ pub const ShootingMaster = struct {
     /// - determine if the tail needs to be truncated, otherwise draw at shotLength
     pub fn drawShots(self: *@This()) void {
         for (self.shots[0..]) |*shot| {
-            if (shot.active) {
-                var adjShotLength: f32 = undefined;
-                const distanceFromOrigin = u.calculateDistance(shot.drawEnd, shot.origin);
-                if (distanceFromOrigin > self.minDistanceForTail) {
-                    adjShotLength = if (distanceFromOrigin - self.minDistanceForTail < self.shotLength)
-                        distanceFromOrigin - self.minDistanceForTail
-                    else
-                        self.shotLength;
-                }
-                shot.drawStart = u.calculatePointOnLine(shot.drawEnd, shot.origin, adjShotLength);
-                rl.DrawLineEx(shot.drawStart, shot.drawEnd, 2, rl.Color.init(255, 255, 255, 255));
+            switch (shot.active) {
+                .ACTIVE, .REMOVING => {
+                    rl.DrawLineEx(shot.drawStart, shot.drawEnd, 2, rl.Color.init(255, 255, 255, 255));
+                },
+                .IDLE => {},
             }
         }
     }

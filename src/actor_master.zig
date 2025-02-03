@@ -189,6 +189,5 @@ pub const ActorMaster = struct {
         std.debug.print("output {} {any}\n", .{ actual.items.len, actual.items[0] });
 
         try expect(actual.items.len == 1);
-        try expect(false);
     }
 };
