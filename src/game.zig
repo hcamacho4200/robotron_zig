@@ -3,6 +3,45 @@ const std = @import("std");
 const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 
+pub const Color = struct { r: f32, g: f32, b: f32, a: f32 };
+
+pub const robotron_red = Color{ .r = 255.0 / 255.0, .g = 0.0, .b = 0.0, .a = 255.0 / 255.0 };
+pub const robotron_yellow = Color{ .r = 233.0 / 255.0, .g = 233.0 / 255.0, .b = 0.0, .a = 255.0 / 255.0 };
+pub const robotron_green = Color{ .r = 19.0 / 255.0, .g = 236.0 / 255.0, .b = 0.0 / 255.0, .a = 255.0 / 255.0 };
+pub const robotron_blue = Color{ .r = 0.0 / 255.0, .g = 0.0 / 255.0, .b = 250.0 / 255.0, .a = 255.0 / 255.0 };
+
+pub const ColorChangeStatus = struct {
+    colors: std.ArrayList(Color) = undefined,
+    position: usize = 0,
+    total: usize = 0,
+    frameCount: usize = 0,
+    frameCountToChange: usize = 7,
+
+    pub fn init(colors: []const Color, frames_before_change: usize) ColorChangeStatus {
+        var color_change_status = ColorChangeStatus{};
+        color_change_status.colors = std.ArrayList(Color).init(std.heap.page_allocator);
+        color_change_status.frameCount = 0;
+        color_change_status.position = 0;
+        color_change_status.total = colors.len;
+        color_change_status.frameCountToChange = frames_before_change;
+
+        // const sizes = color_change_status.colors.capacity;
+        // std.debug.print("sizes {}\n", .{sizes});
+
+        for (colors) |color| {
+            color_change_status.colors.append(color) catch |err| {
+                std.debug.panic("Unable to add color {}", .{err});
+            };
+        }
+
+        return color_change_status;
+    }
+
+    pub fn deinit(self: *@This()) void {
+        self.colors.deinit();
+    }
+};
+
 // zig fmt: off
 pub const Game = struct {
     title: [*c]const u8 = "", 

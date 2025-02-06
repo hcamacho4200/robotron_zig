@@ -30,19 +30,6 @@ pub const ActorMask = struct {
         };
     }
 
-    /// isPixelCollsion - test if two masks have a shared pixel
-    // pub fn isPixelCollision(self: *@This(), rect_actor: u.Rectangle, test_mask: ActorMask, rect_test: u.Rectangle, overlap_rect: u.Rectangle ) bool {
-
-    //     for (0..overlap_rect.height) | overlap_y| {
-    //         for (0..overlap_rect.width | overlap_x)| {
-    //             const actor_mask_pixel = self.mask[(rect_actor.y - y) * width + (rect_actor.x - x)]
-    //             const test_mask_pixel = test_mask.mask[(rect_test.y - y) * width + (rect_test.x - x)]
-
-    //         }
-    //     }
-
-    // }
-
     pub fn dumpMask(self: *const @This()) void {
         std.debug.print("\n", .{});
         const width = @as(usize, @intCast(self.width));

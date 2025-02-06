@@ -40,17 +40,14 @@ pub fn main() !void {
     std.debug.print("{}", .{diamond_actor_image});
     a_diamond.actor_image.actor_mask.dumpMask();
 
-    const player_actor_image = ai.ActorImage.init("./resources/textures/player-down-crop.png");
-    p.actor_image = player_actor_image;
-    std.debug.print("{}", .{player_actor_image});
-    p.actor_image.actor_mask.dumpMask();
-
     const windowBarHeight = estimateTitleBarHeight();
 
     game.updateScreenSize(@divTrunc((rl.GetMonitorHeight(0) - windowBarHeight) * 4, 3), rl.GetMonitorHeight(0) - windowBarHeight);
     game.updateGameField();
 
     var player = p.Player.init();
+    p.glasses_color_status.deinit();
+
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
@@ -88,42 +85,31 @@ pub fn main() !void {
     }
     actor_master.listActive();
 
-    const playerDownCropTexture = rl.LoadTexture("resources/textures/player-down-crop.png");
-    const playerDownCropTextureGlasses = rl.LoadTexture("resources/textures/player-down-crop-glasses.png");
-    const playerDownCropTexture_width = @as(f32, @floatFromInt(playerDownCropTexture.width));
-    const playerDownCropTexture_height = @as(f32, @floatFromInt(playerDownCropTexture.height));
-    const frameRec = rl.Rectangle.init(0.0, 0.0, playerDownCropTexture_width, playerDownCropTexture_height);
-    player.dimensions.width = playerDownCropTexture_width;
-    player.dimensions.height = playerDownCropTexture_height;
-    const playerDownCropShader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
+    // const playerDownCropTextureGlasses = rl.LoadTexture("resources/textures/player-down-crop-glasses.png");
+    // const frameRec = rl.Rectangle.init(0.0, 0.0, playerDownCropTexture_width, playerDownCropTexture_height);
+    // player.dimensions.width = playerDownCropTexture_width;
+    // player.dimensions.height = playerDownCropTexture_height;
 
-    const image = rl.LoadImageFromTexture(playerDownCropTexture);
-    if (image.height > 0) {}
-
-    var newColor: [4]f32 = undefined;
-    const robotron_red = [4]f32{ 255.0 / 255.0, 0.0, 0.0, 255.0 / 255.0 };
-    // const robotron_yellow = [4]f32{ 233.0 / 255.0, 233.0 / 255.0, 0.0, 255.0 / 255.0 };
-    const robotron_green = [4]f32{ 19.0 / 255.0, 236.0 / 255.0, 0.0 / 255.0, 255.0 / 255.0 };
-    const robotron_blue = [4]f32{ 0.0 / 255.0, 0.0 / 255.0, 250.0 / 255.0, 255.0 / 255.0 };
+    // var newColor: [4]f32 = undefined;
 
     // zig fmt: off
-    const PlayerGlassesColorStatus = struct { 
-        colors: [][4]f32, 
-        position: usize, 
-        total: usize,
-        frameCount: usize = 0,
-        frameCountToChange: usize = 7, 
-    };
+    // const PlayerGlassesColorStatus = struct { 
+    //     colors: [][4]f32, 
+    //     position: usize, 
+    //     total: usize,
+    //     frameCount: usize = 0,
+    //     frameCountToChange: usize = 7, 
+    // };
     // zig fmt: on
 
-    var playerGlassesColors = [_][4]f32{ robotron_blue, robotron_green, robotron_red };
-    var playerGlassesColorStatus = PlayerGlassesColorStatus{ .colors = playerGlassesColors[0..], .position = 0, .total = playerGlassesColors.len };
+    // var playerGlassesColors = [_][4]f32{ robotron_blue, robotron_green, robotron_red };
+    // var playerGlassesColorStatus = PlayerGlassesColorStatus{ .colors = playerGlassesColors[0..], .position = 0, .total = playerGlassesColors.len };
 
     while (!rl.WindowShouldClose()) {
         updateScreen(&game, &player);
 
-        const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
-        const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
+        // const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
+        // const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
 
         const deltaTime = rl.GetFrameTime();
 
@@ -137,7 +123,7 @@ pub fn main() !void {
         var player_collision = false;
         var player_overlap: u.Rectangle = undefined;
         const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
-        const actor_collided_with = actor_master.checkCollision(rect_test, p.actor_image, false);
+        const actor_collided_with = actor_master.checkCollision(rect_test, p.player_front_image, false);
         if (actor_collided_with) |ao| {
             player_collision = true;
             player_overlap = ao.overlap;
@@ -152,43 +138,27 @@ pub fn main() !void {
             game.debugInfo = !game.debugInfo;
         }
 
-        // Setup shader value pass-thru
-        rl.SetShaderValue(playerDownCropShader, rl.GetShaderLocation(playerDownCropShader, "newColor"), &newColor, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
-
-        playerGlassesColorStatus.frameCount += 1;
-        if (playerGlassesColorStatus.frameCount > playerGlassesColorStatus.frameCountToChange) {
-            playerGlassesColorStatus.frameCount = 0;
-            playerGlassesColorStatus.position += 1;
-            if (playerGlassesColorStatus.position >= playerGlassesColorStatus.total) playerGlassesColorStatus.position = 0;
-            newColor = playerGlassesColorStatus.colors[playerGlassesColorStatus.position];
-        }
-
         rl.BeginDrawing();
 
         // Draw the playfield
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));
 
-        rl.BeginShaderMode(playerDownCropShader);
-        rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
-        rl.EndShaderMode();
+        // rl.BeginShaderMode(playerDownCropShader);
+        // rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
+        // rl.EndShaderMode();
 
-        rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
-        rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
+        // rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
+        // rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
 
-        // handle drawing of the actors
-        actor_master.handleDraw();
+        // handle drawing of player
+        player.draw(game);
 
-        rl.BeginShaderMode(playerDownCropShader);
-        rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
-        rl.EndShaderMode();
+        // rl.BeginShaderMode(playerDownCropShader);
+        // rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
+        // rl.EndShaderMode();
 
         // Draw the bullets
         player.drawShots();
-
-        // Draw the player overlap collision
-        if (player_collision) {
-            rl.DrawRectangle(@intFromFloat(player_overlap.x), @intFromFloat(player_overlap.y), @intFromFloat(player_overlap.width), @intFromFloat(player_overlap.height), rl.Color.init(255, 255, 255, 150));
-        }
 
         // Handle Shot Collisions
         for (player.shootingMaster.shots[0..]) |*shot| {
@@ -220,6 +190,11 @@ pub fn main() !void {
                 }
             }
         }
+
+        // handle drawing of the actors
+        actor_master.handleDraw();
+
+        rl.DrawTextureV(a_diamond.actor_image.texture, rl.Vector2.init(0, 0), rl.WHITE);
 
         // Handle debugging info
         try di.handleDisplayDebugInfo(game, player, deltaTime);

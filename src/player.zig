@@ -11,7 +11,14 @@ const i = @import("./actors/interfaces.zig");
 
 const ActorImage = @import("./actors/image.zig").ActorImage;
 
-pub var actor_image: ActorImage = undefined;
+pub var player_front_image: ActorImage = undefined;
+var player_front_mask_image: ActorImage = undefined;
+var player_front_mask_shader: rl.Shader = undefined;
+var player_back_image: ActorImage = undefined;
+var player_left_image: ActorImage = undefined;
+var player_right_image: ActorImage = undefined;
+
+pub var glasses_color_status: g.ColorChangeStatus = undefined;
 
 // Define an enum for player direction
 pub const Direction = enum { UP, DOWN, LEFT, RIGHT };
@@ -30,6 +37,14 @@ pub const Player = struct {
     shootingMaster: s.ShootingMaster,
 
     pub fn init() Player {
+        player_front_image = ActorImage.init("./resources/textures/player-front.png");
+        player_front_image.actor_mask.dumpMask();
+        player_front_mask_image = ActorImage.init("resources/textures/player-front-mask.png");
+        player_front_mask_image.actor_mask.dumpMask();
+
+        player_front_mask_shader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
+        glasses_color_status = g.ColorChangeStatus.init(&[_]g.Color{ g.robotron_red, g.robotron_blue, g.robotron_green }, 7);
+
         return Player{ .name = "Robotron", .baseSpeed = 0, .scaledSpeed = 0, .position = .{
             .x = 0,
             .y = 0,
@@ -69,6 +84,32 @@ pub const Player = struct {
 
     pub fn drawShots(self: *@This()) void {
         self.shootingMaster.drawShots();
+    }
+
+    /// Draw the player
+    /// - draw the player
+    /// - enable the various shaders
+    pub fn draw(self: *@This(), game: g.Game) void {
+        const player_front_image_texture_width = @as(f32, @floatFromInt(player_front_image.texture.width));
+        const player_front_image_texture_height = @as(f32, @floatFromInt(player_front_image.texture.height));
+        const frameRec = rl.Rectangle.init(0.0, 0.0, player_front_image_texture_width, player_front_image_texture_height);
+        rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
+        rl.DrawTextureRec(player_front_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.WHITE);
+
+        rl.BeginShaderMode(player_front_mask_shader);
+        rl.DrawTextureRec(player_front_mask_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.BLANK);
+        rl.EndShaderMode();
+
+        // Setup shader value pass-thru
+        rl.SetShaderValue(player_front_mask_shader, rl.GetShaderLocation(player_front_mask_shader, "newColor"), &glasses_color_status.colors.items[glasses_color_status.position], rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
+
+        glasses_color_status.frameCount += 1;
+        // std.debug.print("color {} ", .{glasses_color_status.colors.items[glasses_color_status.position]});
+        if (glasses_color_status.frameCount > glasses_color_status.frameCountToChange) {
+            glasses_color_status.frameCount = 0;
+            glasses_color_status.position += 1;
+            if (glasses_color_status.position >= glasses_color_status.total) glasses_color_status.position = 0;
+        }
     }
 
     pub fn setPlayerPosition(self: *@This(), x: f32, y: f32) void {
