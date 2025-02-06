@@ -14,8 +14,10 @@ brew install zig
 git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib.git
 git clone --depth 1 --branch 4.0 https://github.com/raysan5/raygui.git
 ```
-- build
-- zig build run
+- build and run
+```
+zig build run
+```
 
 Use the s-d-f-e keys to walk about and the j-k-l-i to shoot.
 
