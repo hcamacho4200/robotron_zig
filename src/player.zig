@@ -1,4 +1,5 @@
 const std = @import("std");
+const expect = @import("std").testing.expect;
 
 const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
@@ -43,7 +44,8 @@ pub const Player = struct {
         player_front_mask_image.actor_mask.dumpMask();
 
         player_front_mask_shader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
-        glasses_color_status = g.ColorChangeStatus.init(&[_]g.Color{ g.robotron_red, g.robotron_blue, g.robotron_green }, 7);
+        std.debug.print("load player shader {}\n", .{player_front_mask_shader});
+        glasses_color_status = g.ColorChangeStatus.init(&[_]g.Color{ g.Color{ .r = 255.0 / 255.0, .g = 0.0, .b = 0.0, .a = 255.0 / 255.0 }, g.robotron_blue, g.robotron_green }, 7);
 
         return Player{ .name = "Robotron", .baseSpeed = 0, .scaledSpeed = 0, .position = .{
             .x = 0,
@@ -93,23 +95,18 @@ pub const Player = struct {
         const player_front_image_texture_width = @as(f32, @floatFromInt(player_front_image.texture.width));
         const player_front_image_texture_height = @as(f32, @floatFromInt(player_front_image.texture.height));
         const frameRec = rl.Rectangle.init(0.0, 0.0, player_front_image_texture_width, player_front_image_texture_height);
+        var new_color: g.Color = undefined;
+
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
         rl.DrawTextureRec(player_front_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.WHITE);
+
+        // Setup shader value pass-thru
+        new_color = glasses_color_status.getNextColor();
+        rl.SetShaderValue(player_front_mask_shader, rl.GetShaderLocation(player_front_mask_shader, "newColor"), &new_color, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
 
         rl.BeginShaderMode(player_front_mask_shader);
         rl.DrawTextureRec(player_front_mask_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.BLANK);
         rl.EndShaderMode();
-
-        // Setup shader value pass-thru
-        rl.SetShaderValue(player_front_mask_shader, rl.GetShaderLocation(player_front_mask_shader, "newColor"), &glasses_color_status.colors.items[glasses_color_status.position], rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
-
-        glasses_color_status.frameCount += 1;
-        // std.debug.print("color {} ", .{glasses_color_status.colors.items[glasses_color_status.position]});
-        if (glasses_color_status.frameCount > glasses_color_status.frameCountToChange) {
-            glasses_color_status.frameCount = 0;
-            glasses_color_status.position += 1;
-            if (glasses_color_status.position >= glasses_color_status.total) glasses_color_status.position = 0;
-        }
     }
 
     pub fn setPlayerPosition(self: *@This(), x: f32, y: f32) void {

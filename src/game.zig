@@ -1,9 +1,23 @@
 const std = @import("std");
+const expect = @import("std").testing.expect;
 
 const rlzb = @import("rlzb");
 const rl = rlzb.raylib;
 
-pub const Color = struct { r: f32, g: f32, b: f32, a: f32 };
+pub const Color = struct {
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
+
+    pub fn equal(self: *const @This(), test_color: Color) bool {
+        if (self.r == test_color.r and
+            self.g == test_color.g and
+            self.b == test_color.b and
+            self.a == test_color.a) return true;
+        return false;
+    }
+};
 
 pub const robotron_red = Color{ .r = 255.0 / 255.0, .g = 0.0, .b = 0.0, .a = 255.0 / 255.0 };
 pub const robotron_yellow = Color{ .r = 233.0 / 255.0, .g = 233.0 / 255.0, .b = 0.0, .a = 255.0 / 255.0 };
@@ -25,22 +39,41 @@ pub const ColorChangeStatus = struct {
         color_change_status.total = colors.len;
         color_change_status.frameCountToChange = frames_before_change;
 
-        // const sizes = color_change_status.colors.capacity;
-        // std.debug.print("sizes {}\n", .{sizes});
-
         for (colors) |color| {
             color_change_status.colors.append(color) catch |err| {
                 std.debug.panic("Unable to add color {}", .{err});
             };
         }
-
+        std.debug.print("ColorChangeStatus {any}\n", .{color_change_status.colors.items});
         return color_change_status;
+    }
+
+    pub fn getNextColor(self: *@This()) Color {
+        self.frameCount += 1;
+        if (self.frameCount > self.frameCountToChange) {
+            self.position += 1;
+            self.frameCount = 0;
+            if (self.position >= self.total) self.position = 0;
+            std.debug.print("nextColor {}\n", .{self.colors.items[self.position]});
+        }
+        return self.colors.items[self.position];
     }
 
     pub fn deinit(self: *@This()) void {
         self.colors.deinit();
     }
 };
+
+test "ColorChangeStatus" {
+    const colors = &[_]Color{ robotron_blue, robotron_green, robotron_red };
+    var color_change_status = ColorChangeStatus.init(colors, 2);
+    try expect(color_change_status.getNextColor().equal(robotron_blue));
+    try expect(color_change_status.getNextColor().equal(robotron_blue));
+    try expect(color_change_status.getNextColor().equal(robotron_green));
+    try expect(color_change_status.getNextColor().equal(robotron_green));
+    try expect(color_change_status.getNextColor().equal(robotron_red));
+    try expect(color_change_status.getNextColor().equal(robotron_red));
+}
 
 // zig fmt: off
 pub const Game = struct {

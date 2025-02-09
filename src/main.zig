@@ -35,6 +35,9 @@ pub fn main() !void {
     // Establish Random Number Seed
     var rng = std.Random.Xoshiro256.init(1234);
 
+    // boarder shader
+    const player_front_mask_shader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
+
     const diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png");
     a_diamond.actor_image = diamond_actor_image;
     std.debug.print("{}", .{diamond_actor_image});
@@ -46,7 +49,7 @@ pub fn main() !void {
     game.updateGameField();
 
     var player = p.Player.init();
-    p.glasses_color_status.deinit();
+    defer p.glasses_color_status.deinit();
 
     updateScreen(&game, &player);
 
@@ -108,8 +111,8 @@ pub fn main() !void {
     while (!rl.WindowShouldClose()) {
         updateScreen(&game, &player);
 
-        // const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
-        // const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
+        const offsetStart = u.vector2Subtract(game.playerFrame.frameStart, game.playerFrame.frameThick);
+        const offsetSize = u.vector2Add(u.vector2Add(game.playerFrame.frameSize, game.playerFrame.frameThick), game.playerFrame.frameThick);
 
         const deltaTime = rl.GetFrameTime();
 
@@ -143,9 +146,10 @@ pub fn main() !void {
         // Draw the playfield
         rl.ClearBackground(rl.Color.init(0, 0, 0, 0));
 
-        // rl.BeginShaderMode(playerDownCropShader);
-        // rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
-        // rl.EndShaderMode();
+        rl.SetShaderValue(player_front_mask_shader, rl.GetShaderLocation(player_front_mask_shader, "newColor"), &g.robotron_blue, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
+        rl.BeginShaderMode(player_front_mask_shader);
+        rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
+        rl.EndShaderMode();
 
         // rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
         // rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
@@ -193,8 +197,6 @@ pub fn main() !void {
 
         // handle drawing of the actors
         actor_master.handleDraw();
-
-        rl.DrawTextureV(a_diamond.actor_image.texture, rl.Vector2.init(0, 0), rl.WHITE);
 
         // Handle debugging info
         try di.handleDisplayDebugInfo(game, player, deltaTime);

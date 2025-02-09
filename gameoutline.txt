@@ -34,6 +34,16 @@
     - concerned with ordering, need to get the closest 1st.
     - rewrote, gatherActorsByLine in actor master finds any actors that intersected the shot geometery
     - once there is an intersection, if only 1 then pixel compare.
+- shot rendering fixes
+    - need to continue drawing shot as shot start moves to shot end.
+    - adding status, ACTIVE, INACTIVE, REMOVING
+    - fixed issue
+- restructure player
+    - create draw routine for player
+    - move shader into player
+    - load the images and textures in player
+    - create a color change status that is abstracted
+
     
 
         
