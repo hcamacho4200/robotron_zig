@@ -339,14 +339,6 @@ pub const ShootingMaster = struct {
                 .REMOVING => {
                     shot.active = ShotStatus.IDLE;
                     self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
-
-                    // if (isShotFinished(shot.drawStart, shot.drawEnd, offsetV2)) {
-                    //     shot.active = ShotStatus.IDLE;
-                    //     self.shootingDirectionStates[@intFromEnum(shot.direction)].numActiveBullets -= 1;
-                    //     std.debug.print("removing {}", .{shot});
-                    //     shot.drawStart.x = shot.drawEnd.x;
-                    //     shot.drawStart.y = shot.drawEnd.y;
-                    // } else shot.drawStart = u.vector2Add(shot.drawStart, offsetV2);
                 },
                 .IDLE => {},
             }

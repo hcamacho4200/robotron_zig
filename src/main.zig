@@ -88,26 +88,6 @@ pub fn main() !void {
     }
     actor_master.listActive();
 
-    // const playerDownCropTextureGlasses = rl.LoadTexture("resources/textures/player-down-crop-glasses.png");
-    // const frameRec = rl.Rectangle.init(0.0, 0.0, playerDownCropTexture_width, playerDownCropTexture_height);
-    // player.dimensions.width = playerDownCropTexture_width;
-    // player.dimensions.height = playerDownCropTexture_height;
-
-    // var newColor: [4]f32 = undefined;
-
-    // zig fmt: off
-    // const PlayerGlassesColorStatus = struct { 
-    //     colors: [][4]f32, 
-    //     position: usize, 
-    //     total: usize,
-    //     frameCount: usize = 0,
-    //     frameCountToChange: usize = 7, 
-    // };
-    // zig fmt: on
-
-    // var playerGlassesColors = [_][4]f32{ robotron_blue, robotron_green, robotron_red };
-    // var playerGlassesColorStatus = PlayerGlassesColorStatus{ .colors = playerGlassesColors[0..], .position = 0, .total = playerGlassesColors.len };
-
     while (!rl.WindowShouldClose()) {
         updateScreen(&game, &player);
 
@@ -151,15 +131,8 @@ pub fn main() !void {
         rl.DrawRectangleV(offsetStart, offsetSize, rl.Color.init(0, 255, 0, 255));
         rl.EndShaderMode();
 
-        // rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
-        // rl.DrawTextureRec(playerDownCropTexture, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.WHITE);
-
         // handle drawing of player
         player.draw(game);
-
-        // rl.BeginShaderMode(playerDownCropShader);
-        // rl.DrawTextureRec(playerDownCropTextureGlasses, frameRec, rl.Vector2.init(player.position.x, player.position.y), rl.BLANK);
-        // rl.EndShaderMode();
 
         // Draw the bullets
         player.drawShots();
@@ -180,17 +153,8 @@ pub fn main() !void {
                         },
                         else => {},
                     }
-
-                    // if (actor_rect) |rect| {
-                    // if (actor_mask) |mask| {
-                    // const pixel_overlap = u.detectLinePixelOverlap(rect, mask.mask, u.Line.init(shot.drawStart, shot.drawEnd));
-                    // if (pixel_overlap) {
                     actor_master.removeActor(actors_by_line.items[0]);
                     shot.active = sh.ShotStatus.REMOVING;
-
-                    // }
-                    // }
-                    // }
                 }
             }
         }

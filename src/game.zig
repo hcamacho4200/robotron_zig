@@ -75,12 +75,11 @@ test "ColorChangeStatus" {
     try expect(color_change_status.getNextColor().equal(robotron_red));
 }
 
-// zig fmt: off
 pub const Game = struct {
-    title: [*c]const u8 = "", 
+    title: [*c]const u8 = "",
     screen: struct {
-        /// width of the current game portal 
-        width: c_int, 
+        /// width of the current game portal
+        width: c_int,
         /// height of the current game portal
         height: c_int,
         /// flag for resize, true if current resized and not recalculated
@@ -103,27 +102,15 @@ pub const Game = struct {
     debugInfo: bool,
 
     pub fn init() Game {
-        return Game{ .title = "", 
-            .screen = .{ 
-                .width = 0, 
-                .height = 0, 
-                .updated = false, 
-                .originalHeight = 0, 
-                .scalingFactor = 0 
-            }, 
-            .playerFrame = .{ 
-                .upperPadding = 0.05,
-                .lowerPadding = 0.04,
-                .sidePadding = 0.03,
-                .boarderWidth = 0.005,
-                .frameStart = rl.Vector2.init(0, 0), 
-                .frameSize = rl.Vector2.init(0, 0),
-                .frameThick = rl.Vector2.init(10, 10), 
-            }, 
-            .frameCount = 0,
-            .debugInfo = false 
-        };
-// zig fmt: on
+        return Game{ .title = "", .screen = .{ .width = 0, .height = 0, .updated = false, .originalHeight = 0, .scalingFactor = 0 }, .playerFrame = .{
+            .upperPadding = 0.05,
+            .lowerPadding = 0.04,
+            .sidePadding = 0.03,
+            .boarderWidth = 0.005,
+            .frameStart = rl.Vector2.init(0, 0),
+            .frameSize = rl.Vector2.init(0, 0),
+            .frameThick = rl.Vector2.init(10, 10),
+        }, .frameCount = 0, .debugInfo = false };
     }
 
     /// Updates screen size and scaling factors
