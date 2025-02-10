@@ -54,7 +54,6 @@ pub const ColorChangeStatus = struct {
             self.position += 1;
             self.frameCount = 0;
             if (self.position >= self.total) self.position = 0;
-            std.debug.print("nextColor {}\n", .{self.colors.items[self.position]});
         }
         return self.colors.items[self.position];
     }

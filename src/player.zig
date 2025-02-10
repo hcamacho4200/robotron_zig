@@ -47,12 +47,19 @@ pub const Player = struct {
         std.debug.print("load player shader {}\n", .{player_front_mask_shader});
         glasses_color_status = g.ColorChangeStatus.init(&[_]g.Color{ g.Color{ .r = 255.0 / 255.0, .g = 0.0, .b = 0.0, .a = 255.0 / 255.0 }, g.robotron_blue, g.robotron_green }, 7);
 
+        // zig fmt: off
         return Player{ .name = "Robotron", .baseSpeed = 0, .scaledSpeed = 0, .position = .{
             .x = 0,
             .y = 0,
             .valid = false,
-        }, .center = i.SpriteCenter.init(0, 0, 0, 0), .dimensions = .{ .width = 20, .height = 40 }, .shootingMaster = s.ShootingMaster.init() };
+        }, .center = i.SpriteCenter.init(0, 0, 0, 0), 
+        .dimensions = .{ 
+            .width = @as(f32, @floatFromInt(player_front_image.texture.width)), 
+            .height = @as(f32, @floatFromInt(player_front_image.texture.height)), 
+        }, 
+        .shootingMaster = s.ShootingMaster.init() };
     }
+// zig fmt: on
 
     pub fn updatePlayerScale(self: *@This(), height: c_int) void {
         self.scaledSpeed = @as(f32, @floatFromInt(height)) / 3;
@@ -135,7 +142,6 @@ pub const Player = struct {
             },
             Direction.RIGHT => {
                 const newPosition = self.position.x + speed;
-                std.log.info("RIGHT {d} {d} {d} {d}", .{ self.position.x, newPosition, newPosition + self.dimensions.width, width });
                 x = if ((newPosition + self.dimensions.width < width)) newPosition else width - self.dimensions.width;
             },
             Direction.UP => {
@@ -147,7 +153,7 @@ pub const Player = struct {
                 y = if ((newPosition + self.dimensions.height < height)) newPosition else height - self.dimensions.height;
             },
         }
-
+        std.log.info("{} {d} {d} {d} {d}", .{ direction, self.position.x, self.position.y, x, y });
         self.setPlayerPosition(x, y);
     }
 };

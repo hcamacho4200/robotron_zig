@@ -54,6 +54,8 @@ pub fn main() !void {
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
+    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(player.position.x, player.position.y + 50) });
+
     for (0..50) |_| {
         const player_frame_x_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.x));
         const player_frame_x_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.x + game.playerFrame.frameSize.x));
