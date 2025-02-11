@@ -7,7 +7,6 @@ const rg = rlzb.raygui;
 
 const g = @import("game.zig");
 const s = @import("shooting.zig");
-const p = @import("player.zig");
 const i = @import("./actors/interfaces.zig");
 
 const ActorImage = @import("./actors/image.zig").ActorImage;
@@ -30,6 +29,7 @@ pub const Player = struct {
         x: f32,
         y: f32,
         valid: bool,
+        direction: Direction,
     },
     center: i.SpriteCenter,
     baseSpeed: f32,
@@ -52,6 +52,7 @@ pub const Player = struct {
             .x = 0,
             .y = 0,
             .valid = false,
+            .direction = .DOWN,
         }, .center = i.SpriteCenter.init(0, 0, 0, 0), 
         .dimensions = .{ 
             .width = @as(f32, @floatFromInt(player_front_image.texture.width)), 
@@ -68,10 +69,10 @@ pub const Player = struct {
 
     pub fn handlePlayerInput(self: *@This(), game: g.Game, deltaTime: f32) !void {
         // Player Movement
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.updatePlayerPosition(game, p.Direction.LEFT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.updatePlayerPosition(game, p.Direction.RIGHT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.updatePlayerPosition(game, p.Direction.UP, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.updatePlayerPosition(game, p.Direction.DOWN, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.updatePlayerPosition(game, Direction.LEFT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.updatePlayerPosition(game, Direction.RIGHT, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.updatePlayerPosition(game, Direction.UP, deltaTime);
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.updatePlayerPosition(game, Direction.DOWN, deltaTime);
 
         // Player Shooting
         var shootingDirection: s.ShootDirection = s.ShootDirection.IDLE;
