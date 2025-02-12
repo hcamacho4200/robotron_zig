@@ -83,14 +83,33 @@ pub const Player = struct {
 
     pub fn handlePlayerInput(self: *@This(), game: g.Game, deltaTime: f32) !void {
         // Player Movement
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.updatePlayerPosition(game, Direction.LEFT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.updatePlayerPosition(game, Direction.RIGHT, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.updatePlayerPosition(game, Direction.UP, deltaTime);
-        if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.updatePlayerPosition(game, Direction.DOWN, deltaTime);
+        // zig fmt: off
+        var walkingDirection: s.ShootDirection = s.ShootDirection.IDLE;
+        if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) walkingDirection = s.ShootDirection.UP_LEFT 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) walkingDirection = s.ShootDirection.UP_RIGHT 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) walkingDirection = s.ShootDirection.IDLE 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) walkingDirection = s.ShootDirection.UP 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) walkingDirection = s.ShootDirection.DOWN_LEFT 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) walkingDirection = s.ShootDirection.DOWN_RIGHT 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) walkingDirection = s.ShootDirection.IDLE 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) walkingDirection = s.ShootDirection.DOWN 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) walkingDirection = s.ShootDirection.LEFT 
+        else if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) walkingDirection = s.ShootDirection.RIGHT 
+        else walkingDirection = s.ShootDirection.IDLE;
+
+        if (walkingDirection != s.ShootDirection.IDLE) {
+            self.updatePlayerPosition(game, walkingDirection, deltaTime);
+        }
+
+        // if (rl.IsKeyDown(rl.KeyboardKey.KEY_S.toCInt())) self.updatePlayerPosition(game, Direction.LEFT, deltaTime);
+        // if (rl.IsKeyDown(rl.KeyboardKey.KEY_F.toCInt())) self.updatePlayerPosition(game, Direction.RIGHT, deltaTime);
+        // if (rl.IsKeyDown(rl.KeyboardKey.KEY_E.toCInt())) self.updatePlayerPosition(game, Direction.UP, deltaTime);
+        // if (rl.IsKeyDown(rl.KeyboardKey.KEY_D.toCInt())) self.updatePlayerPosition(game, Direction.DOWN, deltaTime);
 
         // Player Shooting
         var shootingDirection: s.ShootDirection = s.ShootDirection.IDLE;
         if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.UP_LEFT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.UP_RIGHT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.IDLE else if (rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.UP else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.DOWN_LEFT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.DOWN_RIGHT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt()) and rl.IsKeyDown(rl.KeyboardKey.KEY_I.toCInt())) shootingDirection = s.ShootDirection.IDLE else if (rl.IsKeyDown(rl.KeyboardKey.KEY_K.toCInt())) shootingDirection = s.ShootDirection.DOWN else if (rl.IsKeyDown(rl.KeyboardKey.KEY_J.toCInt())) shootingDirection = s.ShootDirection.LEFT else if (rl.IsKeyDown(rl.KeyboardKey.KEY_L.toCInt())) shootingDirection = s.ShootDirection.RIGHT else shootingDirection = s.ShootDirection.IDLE;
+        // zig fmt: on
 
         if (shootingDirection != s.ShootDirection.IDLE) {
             if (self.shootingMaster.canShoot(shootingDirection)) {
@@ -141,7 +160,7 @@ pub const Player = struct {
         self.center.y = self.position.y + self.dimensions.height / 2;
     }
 
-    pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: Direction, deltaTime: f32) void {
+    pub fn updatePlayerPosition(self: *@This(), game: g.Game, direction: s.ShootDirection, deltaTime: f32) void {
         const speed = self.scaledSpeed * deltaTime;
 
         const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
@@ -153,30 +172,56 @@ pub const Player = struct {
         var actor_direction: ActorDirection = undefined;
 
         switch (direction) {
-            Direction.LEFT => {
+            s.ShootDirection.LEFT => {
                 const newPosition = self.position.x - speed;
                 x = if ((newPosition > game.playerFrame.frameStart.x)) newPosition else game.playerFrame.frameStart.x;
                 actor_direction = ActorDirection.LEFT;
             },
-            Direction.RIGHT => {
+            s.ShootDirection.RIGHT => {
                 const newPosition = self.position.x + speed;
                 x = if ((newPosition + self.dimensions.width < width)) newPosition else width - self.dimensions.width;
                 actor_direction = ActorDirection.RIGHT;
             },
-            Direction.UP => {
+            s.ShootDirection.UP => {
                 const newPosition = self.position.y - speed;
                 y = if ((newPosition > game.playerFrame.frameStart.y)) newPosition else game.playerFrame.frameStart.y;
                 actor_direction = ActorDirection.UP;
             },
-            Direction.DOWN => {
+            s.ShootDirection.DOWN => {
                 const newPosition = self.position.y + speed;
                 y = if ((newPosition + self.dimensions.height < height)) newPosition else height - self.dimensions.height;
                 actor_direction = ActorDirection.DOWN;
             },
+            s.ShootDirection.UP_LEFT => {
+                const newPosition_y = self.position.y - speed;
+                const newPosition_x = self.position.x - speed;
+                y = if ((newPosition_y > game.playerFrame.frameStart.y)) newPosition_y else game.playerFrame.frameStart.y;
+                x = if ((newPosition_x > game.playerFrame.frameStart.x)) newPosition_x else game.playerFrame.frameStart.x;
+                actor_direction = ActorDirection.LEFT;
+            },
+            s.ShootDirection.UP_RIGHT => {
+                const newPosition_y = self.position.y - speed;
+                const newPosition_x = self.position.x + speed;
+                y = if ((newPosition_y > game.playerFrame.frameStart.y)) newPosition_y else game.playerFrame.frameStart.y;
+                x = if ((newPosition_x + self.dimensions.width < width)) newPosition_x else width - self.dimensions.width;
+                actor_direction = ActorDirection.RIGHT;
+            },
+            s.ShootDirection.DOWN_LEFT => {
+                const newPosition_y = self.position.y + speed;
+                const newPosition_x = self.position.x - speed;
+                y = if ((newPosition_y + self.dimensions.height < height)) newPosition_y else height - self.dimensions.height;
+                x = if ((newPosition_x > game.playerFrame.frameStart.x)) newPosition_x else game.playerFrame.frameStart.x;
+                actor_direction = ActorDirection.LEFT;
+            },
+            s.ShootDirection.DOWN_RIGHT => {
+                const newPosition_y = self.position.y + speed;
+                const newPosition_x = self.position.x + speed;
+                y = if ((newPosition_y + self.dimensions.height < height)) newPosition_y else height - self.dimensions.height;
+                x = if ((newPosition_x + self.dimensions.width < width)) newPosition_x else width - self.dimensions.width;
+                actor_direction = ActorDirection.RIGHT;
+            },
+            else => {},
         }
-
-        if (direction == Direction.RIGHT) actor_direction = ActorDirection.RIGHT;
-        if (direction == Direction.LEFT) actor_direction = ActorDirection.LEFT;
 
         active_image = image_container.getImage(actor_direction);
         active_mask_image = mask_container.getImage(actor_direction);
