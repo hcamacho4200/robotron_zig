@@ -10,13 +10,15 @@ const s = @import("shooting.zig");
 const i = @import("./actors/interfaces.zig");
 
 const ActorImage = @import("./actors/image.zig").ActorImage;
+const ActorDirection = @import("./actors/image.zig").ActorDirection;
+const ActorContainer = @import("./actors/image.zig").ActorContainer;
 
-pub var player_front_image: ActorImage = undefined;
-var player_front_mask_image: ActorImage = undefined;
+var image_container = ActorContainer.init();
+var mask_container = ActorContainer.init();
+
+pub var active_image: ActorImage = undefined;
+var active_mask_image: ActorImage = undefined;
 var player_front_mask_shader: rl.Shader = undefined;
-var player_back_image: ActorImage = undefined;
-var player_left_image: ActorImage = undefined;
-var player_right_image: ActorImage = undefined;
 
 pub var glasses_color_status: g.ColorChangeStatus = undefined;
 
@@ -38,10 +40,22 @@ pub const Player = struct {
     shootingMaster: s.ShootingMaster,
 
     pub fn init() Player {
-        player_front_image = ActorImage.init("./resources/textures/player-front.png");
-        player_front_image.actor_mask.dumpMask();
-        player_front_mask_image = ActorImage.init("resources/textures/player-front-mask.png");
-        player_front_mask_image.actor_mask.dumpMask();
+        image_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/player-front.png"));
+        image_container.addImage(ActorDirection.RIGHT, ActorImage.init("./resources/textures/player-right.png"));
+        image_container.addImage(ActorDirection.LEFT, ActorImage.init("./resources/textures/player-left.png"));
+        image_container.addImage(ActorDirection.UP, ActorImage.init("./resources/textures/player-back.png"));
+
+        mask_container.addImage(ActorDirection.DOWN, ActorImage.init("resources/textures/player-front-mask.png"));
+        mask_container.addImage(ActorDirection.RIGHT, ActorImage.init("resources/textures/player-right-mask.png"));
+        mask_container.addImage(ActorDirection.LEFT, ActorImage.init("resources/textures/player-left-mask.png"));
+        mask_container.addImage(ActorDirection.UP, ActorImage.init("resources/textures/player-back-mask.png"));
+
+        active_image = image_container.getImage(ActorDirection.DOWN);
+        active_image.actor_mask.dumpMask();
+
+        active_mask_image = mask_container.getImage(ActorDirection.DOWN);
+        active_mask_image = mask_container.getImage(ActorDirection.DOWN);
+        active_mask_image.actor_mask.dumpMask();
 
         player_front_mask_shader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
         std.debug.print("load player shader {}\n", .{player_front_mask_shader});
@@ -55,8 +69,8 @@ pub const Player = struct {
             .direction = .DOWN,
         }, .center = i.SpriteCenter.init(0, 0, 0, 0), 
         .dimensions = .{ 
-            .width = @as(f32, @floatFromInt(player_front_image.texture.width)), 
-            .height = @as(f32, @floatFromInt(player_front_image.texture.height)), 
+            .width = @as(f32, @floatFromInt(active_image.texture.width)), 
+            .height = @as(f32, @floatFromInt(active_image.texture.height)), 
         }, 
         .shootingMaster = s.ShootingMaster.init() };
     }
@@ -100,20 +114,20 @@ pub const Player = struct {
     /// - draw the player
     /// - enable the various shaders
     pub fn draw(self: *@This(), game: g.Game) void {
-        const player_front_image_texture_width = @as(f32, @floatFromInt(player_front_image.texture.width));
-        const player_front_image_texture_height = @as(f32, @floatFromInt(player_front_image.texture.height));
+        const player_front_image_texture_width = @as(f32, @floatFromInt(active_image.texture.width));
+        const player_front_image_texture_height = @as(f32, @floatFromInt(active_image.texture.height));
         const frameRec = rl.Rectangle.init(0.0, 0.0, player_front_image_texture_width, player_front_image_texture_height);
         var new_color: g.Color = undefined;
 
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));
-        rl.DrawTextureRec(player_front_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.WHITE);
+        rl.DrawTextureRec(active_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.WHITE);
 
         // Setup shader value pass-thru
         new_color = glasses_color_status.getNextColor();
         rl.SetShaderValue(player_front_mask_shader, rl.GetShaderLocation(player_front_mask_shader, "newColor"), &new_color, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
 
         rl.BeginShaderMode(player_front_mask_shader);
-        rl.DrawTextureRec(player_front_mask_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.BLANK);
+        rl.DrawTextureRec(active_mask_image.texture, frameRec, rl.Vector2.init(self.position.x, self.position.y), rl.BLANK);
         rl.EndShaderMode();
     }
 
@@ -136,24 +150,39 @@ pub const Player = struct {
         var x = self.position.x;
         var y = self.position.y;
 
+        var actor_direction: ActorDirection = undefined;
+
         switch (direction) {
             Direction.LEFT => {
                 const newPosition = self.position.x - speed;
                 x = if ((newPosition > game.playerFrame.frameStart.x)) newPosition else game.playerFrame.frameStart.x;
+                actor_direction = ActorDirection.LEFT;
             },
             Direction.RIGHT => {
                 const newPosition = self.position.x + speed;
                 x = if ((newPosition + self.dimensions.width < width)) newPosition else width - self.dimensions.width;
+                actor_direction = ActorDirection.RIGHT;
             },
             Direction.UP => {
                 const newPosition = self.position.y - speed;
                 y = if ((newPosition > game.playerFrame.frameStart.y)) newPosition else game.playerFrame.frameStart.y;
+                actor_direction = ActorDirection.UP;
             },
             Direction.DOWN => {
                 const newPosition = self.position.y + speed;
                 y = if ((newPosition + self.dimensions.height < height)) newPosition else height - self.dimensions.height;
+                actor_direction = ActorDirection.DOWN;
             },
         }
+
+        if (direction == Direction.RIGHT) actor_direction = ActorDirection.RIGHT;
+        if (direction == Direction.LEFT) actor_direction = ActorDirection.LEFT;
+
+        active_image = image_container.getImage(actor_direction);
+        active_mask_image = mask_container.getImage(actor_direction);
+        self.dimensions.width = @as(f32, @floatFromInt(active_image.texture.width));
+        self.dimensions.height = @as(f32, @floatFromInt(active_image.texture.height));
+
         std.log.info("{} {d} {d} {d} {d}", .{ direction, self.position.x, self.position.y, x, y });
         self.setPlayerPosition(x, y);
     }

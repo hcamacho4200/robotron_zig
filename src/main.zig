@@ -108,7 +108,7 @@ pub fn main() !void {
         var player_collision = false;
         var player_overlap: u.Rectangle = undefined;
         const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
-        const actor_collided_with = actor_master.checkCollision(rect_test, p.player_front_image, false);
+        const actor_collided_with = actor_master.checkCollision(rect_test, p.active_image, false);
         if (actor_collided_with) |ao| {
             player_collision = true;
             player_overlap = ao.overlap;

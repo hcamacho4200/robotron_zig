@@ -60,3 +60,21 @@ pub const ActorImage = struct {
         };
     }
 };
+
+pub const ActorDirection = enum { DOWN, UP, LEFT, RIGHT };
+
+pub const ActorContainer = struct {
+    images: [@typeInfo(ActorDirection).Enum.fields.len]ActorImage = undefined,
+
+    pub fn init() ActorContainer {
+        return ActorContainer{};
+    }
+
+    pub fn addImage(self: *@This(), direction: ActorDirection, actor_image: ActorImage) void {
+        self.images[@intFromEnum(direction)] = actor_image;
+    }
+
+    pub fn getImage(self: *@This(), direction: ActorDirection) ActorImage {
+        return self.images[@intFromEnum(direction)];
+    }
+};
