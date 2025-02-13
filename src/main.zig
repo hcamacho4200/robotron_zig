@@ -13,6 +13,7 @@ const u = @import("util.zig");
 const a = @import("actor_master.zig");
 const ai = @import("./actors/image.zig");
 const a_diamond = @import("./actors/diamond.zig");
+const a_grunt = @import("./actors/grunt.zig");
 const sh = @import("shooting.zig");
 
 // zig fmt: on
@@ -54,39 +55,11 @@ pub fn main() !void {
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
-    actor_master.addActor(a.Actor{ .diamond = a_diamond.Diamond.init(player.position.x, player.position.y + 50) });
+    actor_master.addActor(newActorPlacement(.grunt, game, player, &actor_master, &rng, 400, false));
 
     for (0..50) |_| {
-        const player_frame_x_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.x));
-        const player_frame_x_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.x + game.playerFrame.frameSize.x));
-        const player_frame_y_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.y));
-        const player_frame_y_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.y + game.playerFrame.frameSize.y));
-
-        while (true) {
-            const x = @as(f32, @floatFromInt(u.generateRandomIntInRange(&rng, player_frame_x_min, player_frame_x_max)));
-            const y = @as(f32, @floatFromInt(u.generateRandomIntInRange(&rng, player_frame_y_min, player_frame_y_max)));
-            var new_actor = a.Actor{ .diamond = a_diamond.Diamond.init(x, y) };
-            const rect_test = u.Rectangle.init(x, y, new_actor.diamond.sprite_position.width, new_actor.diamond.sprite_position.height);
-
-            // check distance from player.
-            const distance_from_player = u.calculateDistance(player.center.toVector2(), new_actor.diamond.sprite_position.center.toVector2());
-            const padding = 5;
-            if (distance_from_player > 400) {
-                if (rect_test.x + padding > @as(f32, @floatFromInt(player_frame_x_min)) and
-                    rect_test.y + padding > @as(f32, @floatFromInt(player_frame_y_min)) and
-                    rect_test.x + rect_test.width + padding < @as(f32, @floatFromInt(player_frame_x_max)) and
-                    rect_test.y + rect_test.height + padding < @as(f32, @floatFromInt(player_frame_y_max)))
-                {
-
-                    // Check if new actor collides with any other actor.
-                    const actor_collided_with = actor_master.checkCollision(rect_test, a_diamond.actor_image, true);
-                    if (actor_collided_with) |_| {} else {
-                        actor_master.addActor(new_actor);
-                        break;
-                    }
-                }
-            }
-        }
+        const new_actor = newActorPlacement(.diamond, game, player, &actor_master, &rng, 400, false);
+        actor_master.addActor(new_actor);
     }
     actor_master.listActive();
 
@@ -209,5 +182,57 @@ fn estimateTitleBarHeight() c_int {
             std.debug.print("Unknown OS\n", .{});
             return 22;
         },
+    }
+}
+
+/// New Actor Placement
+/// Create a new actor within the bounds of the play field with options:
+/// - allow overlap
+/// - distance from the player starting position
+pub fn newActorPlacement(actor_type: @TypeOf(.diamond), game: g.Game, player: p.Player, actor_master: *a.ActorMaster, rng: *std.Random.Xoshiro256, distance_from_player: f32, allow_overlap: bool) a.Actor {
+    const player_frame_x_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.x));
+    const player_frame_x_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.x + game.playerFrame.frameSize.x));
+    const player_frame_y_min = @as(u32, @intFromFloat(game.playerFrame.frameStart.y));
+    const player_frame_y_max = @as(u32, @intFromFloat(game.playerFrame.frameStart.y + game.playerFrame.frameSize.y));
+
+    _ = allow_overlap;
+
+    while (true) {
+        const x = @as(f32, @floatFromInt(u.generateRandomIntInRange(rng, player_frame_x_min, player_frame_x_max)));
+        const y = @as(f32, @floatFromInt(u.generateRandomIntInRange(rng, player_frame_y_min, player_frame_y_max)));
+
+        var new_actor: a.Actor = undefined;
+        switch (actor_type) {
+            .diamond => new_actor = a.Actor{ .diamond = a_diamond.Diamond.init(x, y) },
+            .grunt => new_actor = a.Actor{ .grunt = a_grunt.Grunt.init(x, y) },
+            else => {},
+        }
+
+        var rect_test: u.Rectangle = undefined;
+        var distance: f32 = undefined;
+
+        switch (new_actor) {
+            inline else => |actor| {
+                rect_test = u.Rectangle.init(x, y, actor.sprite_position.width, actor.sprite_position.height);
+                distance = u.calculateDistance(player.center.toVector2(), actor.sprite_position.center.toVector2());
+            },
+        }
+
+        // check distance from player.
+        const padding = 5;
+        if (distance > distance_from_player) {
+            if (rect_test.x + padding > @as(f32, @floatFromInt(player_frame_x_min)) and
+                rect_test.y + padding > @as(f32, @floatFromInt(player_frame_y_min)) and
+                rect_test.x + rect_test.width + padding < @as(f32, @floatFromInt(player_frame_x_max)) and
+                rect_test.y + rect_test.height + padding < @as(f32, @floatFromInt(player_frame_y_max)))
+            {
+
+                // Check if new actor collides with any other actor.
+                const actor_collided_with = actor_master.checkCollision(rect_test, a_diamond.actor_image, true);
+                if (actor_collided_with) |_| {} else {
+                    return new_actor;
+                }
+            }
+        }
     }
 }

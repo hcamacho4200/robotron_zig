@@ -12,14 +12,11 @@ const SpritePosition = @import("interfaces.zig").SpritePosition;
 pub var actor_image: ActorImage = undefined;
 
 pub const Diamond = struct {
-    actor_interface: ActorInterface,
     sprite_position: SpritePosition,
 
     pub fn init(x: f32, y: f32) Diamond {
         return Diamond{
-            // .sprite_position = SpritePosition.init(x, y, @as(f32, @floatFromInt(image.width)), @as(f32, @floatFromInt(image.height))),
             .sprite_position = SpritePosition.init(x, y, 50, 50),
-            .actor_interface = ActorInterface{ .sprite = SpriteInterface{ .handleDraw = handleDraw, .handleUpdate = handleUpdate } },
         };
     }
 
@@ -27,17 +24,15 @@ pub const Diamond = struct {
         self.x = x;
         self.y = y;
     }
+
+    pub fn handleDraw(self: Diamond) void {
+        // std.debug.print("Diamond draw {} {}\n", .{ self, diamond.sprite_position });
+        const x = self.sprite_position.x;
+        const y = self.sprite_position.y;
+        rl.DrawTextureV(actor_image.texture, rl.Vector2.init(x, y), rl.WHITE);
+    }
+
+    pub fn handleUpdate(self: *@This()) void {
+        std.debug.print("Diamond update {} {}\n", .{ self, self.sprite_position });
+    }
 };
-
-pub fn handleDraw(self: *anyopaque) void {
-    const diamond: *Diamond = @alignCast(@ptrCast(self));
-    // std.debug.print("Diamond draw {} {}\n", .{ self, diamond.sprite_position });
-    const x = diamond.sprite_position.x;
-    const y = diamond.sprite_position.y;
-    rl.DrawTextureV(actor_image.texture, rl.Vector2.init(x, y), rl.WHITE);
-}
-
-pub fn handleUpdate(self: *anyopaque) void {
-    const diamond: *Diamond = @alignCast(@ptrCast(self));
-    std.debug.print("Diamond update {} {}\n", .{ self, diamond.sprite_position });
-}

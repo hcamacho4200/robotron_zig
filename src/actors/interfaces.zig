@@ -21,7 +21,7 @@ pub const SpriteCenter = struct {
         self.y = y;
     }
 
-    pub fn toVector2(self: *@This()) rl.Vector2 {
+    pub fn toVector2(self: @This()) rl.Vector2 {
         return rl.Vector2.init(self.x, self.y);
     }
 };

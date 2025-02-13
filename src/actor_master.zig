@@ -12,14 +12,24 @@ const u = @import("util.zig");
 
 const Diamond = @import("./actors/diamond.zig").Diamond;
 const Empty = @import("./actors/empty.zig").Empty;
+const Grunt = @import("./actors/grunt.zig").Grunt;
 const Mine = @import("./actors/mine.zig").Mine;
 const Star = @import("./actors/star.zig").Star;
 
 pub const Actor = union(enum) {
     diamond: Diamond,
-    mine: Mine,
-    star: Star,
+    // mine: Mine,
+    // star: Star,
     empty: Empty,
+    grunt: Grunt,
+
+    pub fn handleDraw(self: Actor) void {
+        switch (self) {
+            inline else => |actor| {
+                actor.handleDraw();
+            },
+        }
+    }
 };
 
 pub const ActorMaster = struct {
@@ -28,7 +38,7 @@ pub const ActorMaster = struct {
     pub fn init() ActorMaster {
         var uninitialized: [1024]Actor = undefined;
         for (uninitialized[0..]) |*actor| {
-            actor.* = Actor{ .empty = Empty.init() };
+            actor.* = Actor{ .empty = Empty.init(0, 0) };
         }
         return ActorMaster{ .actors = uninitialized };
     }
@@ -83,10 +93,7 @@ pub const ActorMaster = struct {
 
     pub fn handleDraw(self: *@This()) void {
         for (self.actors[0..]) |*actor| {
-            switch (actor.*) {
-                .diamond => actor.diamond.actor_interface.sprite.handleDraw(actor),
-                else => {},
-            }
+            actor.handleDraw();
         }
     }
 
@@ -94,7 +101,7 @@ pub const ActorMaster = struct {
         std.debug.print("removing actor {}", .{actor});
         for (0..self.actors.len) |idx| {
             if (&self.actors[idx] == actor) {
-                self.actors[idx] = Actor{ .empty = Empty.init() };
+                self.actors[idx] = Actor{ .empty = Empty.init(0, 0) };
             }
         }
     }
@@ -106,16 +113,25 @@ pub const ActorMaster = struct {
             var rect_actor: u.Rectangle = undefined;
             var actor_mask: ai.ActorMask = undefined;
             switch (actor.*) {
-                .diamond => {
+                inline else => |the_actor| {
                     rect_actor = u.Rectangle.init(
-                        actor.diamond.sprite_position.x,
-                        actor.diamond.sprite_position.y,
-                        actor.diamond.sprite_position.width,
-                        actor.diamond.sprite_position.height,
+                        the_actor.sprite_position.x,
+                        the_actor.sprite_position.y,
+                        the_actor.sprite_position.width,
+                        the_actor.sprite_position.height,
                     );
                     actor_mask = d.actor_image.actor_mask;
                 },
-                else => {},
+                // .diamond => {
+                //     rect_actor = u.Rectangle.init(
+                //         actor.diamond.sprite_position.x,
+                //         actor.diamond.sprite_position.y,
+                //         actor.diamond.sprite_position.width,
+                //         actor.diamond.sprite_position.height,
+                //     );
+                //     actor_mask = d.actor_image.actor_mask;
+                // },
+                // else => {},
             }
             const overlap = u.isOverLappingRectangles(rect_actor, rect_test);
             if (overlap) |overlap_rectangle| {
