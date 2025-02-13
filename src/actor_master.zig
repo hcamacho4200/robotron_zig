@@ -7,6 +7,7 @@ const rg = rlzb.raygui;
 
 const d = @import("./actors/diamond.zig");
 const ai = @import("./actors/image.zig");
+const g = @import("game.zig");
 const i = @import("./actors//interfaces.zig");
 const u = @import("util.zig");
 
@@ -27,6 +28,14 @@ pub const Actor = union(enum) {
         switch (self) {
             inline else => |actor| {
                 actor.handleDraw();
+            },
+        }
+    }
+
+    pub fn handleUpdate(self: *Actor, game: g.Game, delta_time: f32) void {
+        switch (self.*) {
+            inline else => |*actor| {
+                actor.handleUpdate(game, delta_time);
             },
         }
     }
@@ -81,19 +90,21 @@ pub const ActorMaster = struct {
         }
     }
 
-    pub fn handleUpdate(self: *@This()) void {
+    pub fn handleUpdate(self: *@This(), game: g.Game, delta_time: f32) void {
         for (self.actors[0..]) |*actor| {
             switch (actor.*) {
-                .diamond => actor.diamond.actor_interface.sprite.handleUpdate(actor),
-                .mine => actor.mine.actor_interface.sprite.handleUpdate(actor),
-                else => {},
+                .empty => {},
+                else => actor.handleUpdate(game, delta_time),
             }
         }
     }
 
     pub fn handleDraw(self: *@This()) void {
         for (self.actors[0..]) |*actor| {
-            actor.handleDraw();
+            switch (actor.*) {
+                .empty => {},
+                else => actor.handleDraw(),
+            }
         }
     }
 
@@ -122,16 +133,6 @@ pub const ActorMaster = struct {
                     );
                     actor_mask = d.actor_image.actor_mask;
                 },
-                // .diamond => {
-                //     rect_actor = u.Rectangle.init(
-                //         actor.diamond.sprite_position.x,
-                //         actor.diamond.sprite_position.y,
-                //         actor.diamond.sprite_position.width,
-                //         actor.diamond.sprite_position.height,
-                //     );
-                //     actor_mask = d.actor_image.actor_mask;
-                // },
-                // else => {},
             }
             const overlap = u.isOverLappingRectangles(rect_actor, rect_test);
             if (overlap) |overlap_rectangle| {

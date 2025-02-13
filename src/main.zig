@@ -134,6 +134,9 @@ pub fn main() !void {
             }
         }
 
+        // handle update of the actors
+        actor_master.handleUpdate(game, deltaTime);
+
         // handle drawing of the actors
         actor_master.handleDraw();
 
@@ -204,7 +207,7 @@ pub fn newActorPlacement(actor_type: @TypeOf(.diamond), game: g.Game, player: p.
         var new_actor: a.Actor = undefined;
         switch (actor_type) {
             .diamond => new_actor = a.Actor{ .diamond = a_diamond.Diamond.init(x, y) },
-            .grunt => new_actor = a.Actor{ .grunt = a_grunt.Grunt.init(x, y) },
+            .grunt => new_actor = a.Actor{ .grunt = a_grunt.Grunt.init(x, y, @as(f32, @floatFromInt(game.screen.height))) },
             else => {},
         }
 
