@@ -5,6 +5,7 @@ const rl = rlzb.raylib;
 const rg = rlzb.raygui;
 
 const g = @import("../game.zig");
+const p = @import("../player.zig");
 
 const ActorInterface = @import("interfaces.zig").ActorInterface;
 const ActorImage = @import("image.zig").ActorImage;
@@ -34,10 +35,11 @@ pub const Diamond = struct {
         rl.DrawTextureV(actor_image.texture, rl.Vector2.init(x, y), rl.WHITE);
     }
 
-    pub fn handleUpdate(self: Diamond, game: g.Game, delta_time: f32) void {
+    pub fn handleUpdate(self: Diamond, game: g.Game, player: p.Player, delta_time: f32) void {
         _ = self;
         _ = delta_time;
         _ = game;
+        _ = player;
         // std.debug.print("Diamond update {} {} {}\n", .{ self, self.sprite_position, delta_time });
     }
 };

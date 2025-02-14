@@ -55,7 +55,9 @@ pub fn main() !void {
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
-    actor_master.addActor(newActorPlacement(.grunt, game, player, &actor_master, &rng, 400, false));
+    for (0..3) |_| {
+        actor_master.addActor(newActorPlacement(.grunt, game, player, &actor_master, &rng, 400, false));
+    }
 
     for (0..50) |_| {
         const new_actor = newActorPlacement(.diamond, game, player, &actor_master, &rng, 400, false);
@@ -126,6 +128,10 @@ pub fn main() !void {
                             actor_rect = sprite.sprite_position.asRectangle();
                             actor_mask = a_diamond.actor_image.actor_mask;
                         },
+                        .grunt => |*sprite| {
+                            actor_rect = sprite.sprite_position.asRectangle();
+                            actor_mask = a_grunt.active_image.actor_mask;
+                        },
                         else => {},
                     }
                     actor_master.removeActor(actors_by_line.items[0]);
@@ -135,7 +141,7 @@ pub fn main() !void {
         }
 
         // handle update of the actors
-        actor_master.handleUpdate(game, deltaTime);
+        actor_master.handleUpdate(game, player, deltaTime);
 
         // handle drawing of the actors
         actor_master.handleDraw();

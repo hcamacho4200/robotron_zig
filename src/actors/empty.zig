@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const g = @import("../game.zig");
+const p = @import("../player.zig");
 
 const SpritePosition = @import("interfaces.zig").SpritePosition;
 
@@ -17,8 +18,9 @@ pub const Empty = struct {
         _ = self;
     }
 
-    pub fn handleUpdate(self: Empty, game: g.Game, delta_time: f32) void {
+    pub fn handleUpdate(self: Empty, game: g.Game, player: p.Player, delta_time: f32) void {
         _ = game;
+        _ = player;
         std.debug.print("Empty update {} {} {}\n", .{ self, self.sprite_position, delta_time });
     }
 };

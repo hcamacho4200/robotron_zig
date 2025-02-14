@@ -9,6 +9,7 @@ const d = @import("./actors/diamond.zig");
 const ai = @import("./actors/image.zig");
 const g = @import("game.zig");
 const i = @import("./actors//interfaces.zig");
+const p = @import("player.zig");
 const u = @import("util.zig");
 
 const Diamond = @import("./actors/diamond.zig").Diamond;
@@ -32,10 +33,10 @@ pub const Actor = union(enum) {
         }
     }
 
-    pub fn handleUpdate(self: *Actor, game: g.Game, delta_time: f32) void {
+    pub fn handleUpdate(self: *Actor, game: g.Game, player: p.Player, delta_time: f32) void {
         switch (self.*) {
             inline else => |*actor| {
-                actor.handleUpdate(game, delta_time);
+                actor.handleUpdate(game, player, delta_time);
             },
         }
     }
@@ -90,20 +91,20 @@ pub const ActorMaster = struct {
         }
     }
 
-    pub fn handleUpdate(self: *@This(), game: g.Game, delta_time: f32) void {
-        for (self.actors[0..]) |*actor| {
-            switch (actor.*) {
-                .empty => {},
-                else => actor.handleUpdate(game, delta_time),
-            }
-        }
-    }
-
     pub fn handleDraw(self: *@This()) void {
         for (self.actors[0..]) |*actor| {
             switch (actor.*) {
                 .empty => {},
                 else => actor.handleDraw(),
+            }
+        }
+    }
+
+    pub fn handleUpdate(self: *@This(), game: g.Game, player: p.Player, delta_time: f32) void {
+        for (self.actors[0..]) |*actor| {
+            switch (actor.*) {
+                .empty => {},
+                else => actor.handleUpdate(game, player, delta_time),
             }
         }
     }
@@ -155,11 +156,9 @@ pub const ActorMaster = struct {
     pub fn getEdgesFromActor(self: *const @This(), actor: *const Actor) ?[4]i.SpriteEdge {
         _ = self;
         switch (actor.*) {
-            .diamond => {
-                return actor.diamond.sprite_position.getEdges();
-            },
-            else => {
-                return null;
+            .empty => return null,
+            inline else => |it| {
+                return it.sprite_position.getEdges();
             },
         }
     }
@@ -178,7 +177,8 @@ pub const ActorMaster = struct {
 
         for (self.actors[0..]) |*actor| {
             switch (actor.*) {
-                .diamond => {
+                .empty => {},
+                inline else => {
                     const optional_edges = self.getEdgesFromActor(actor);
                     if (optional_edges) |edges| {
                         for (edges[0..]) |edge| {
@@ -189,7 +189,6 @@ pub const ActorMaster = struct {
                         }
                     }
                 },
-                else => {},
             }
         }
         return found_actors;

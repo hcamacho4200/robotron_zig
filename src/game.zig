@@ -49,12 +49,12 @@ pub const ColorChangeStatus = struct {
     }
 
     pub fn getNextColor(self: *@This()) Color {
-        self.frameCount += 1;
-        if (self.frameCount > self.frameCountToChange) {
+        if (self.frameCount >= self.frameCountToChange) {
             self.position += 1;
             self.frameCount = 0;
             if (self.position >= self.total) self.position = 0;
         }
+        self.frameCount += 1;
         return self.colors.items[self.position];
     }
 

@@ -56,4 +56,13 @@ pub const SpritePosition = struct {
             SpriteEdge.init(rl.Vector2.init(self.x, self.y + self.height), rl.Vector2.init(self.x + self.width, self.y + self.height)),
         };
     }
+
+    pub fn setPosition(self: *@This(), x: f32, y: f32) void {
+        self.x = x;
+        self.y = y;
+
+        // Update Player Center.
+        self.center.x = x + self.width / 2;
+        self.center.y = y + self.height / 2;
+    }
 };

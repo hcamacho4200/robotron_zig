@@ -365,3 +365,58 @@ test "detectLinePixelOverlap" {
 
     try expect(actual == true);
 }
+
+/// Find Direction To end point
+/// - start should be the location of the item to move to end.
+/// - end should be the item in question
+/// - compute an offset vector to the end from start
+pub fn findDirectionTo(start: rl.Vector2, end: rl.Vector2) rl.Vector2 {
+    var direction = rl.Vector2.init(0, 0);
+    if (start.x > end.x) direction.x = -1 else if (start.x < end.x) direction.x = 1 else direction.x = 0;
+    if (start.y > end.y) direction.y = -1 else if (start.y < end.y) direction.y = 1 else direction.y = 0;
+    return direction;
+}
+
+test "findDirectionTo" {
+    var actual: rl.Vector2 = undefined;
+
+    // right
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(100, 50));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == 1 and actual.y == 0);
+
+    // left
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(0, 50));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == -1 and actual.y == 0);
+
+    // up
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(50, 0));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == 0 and actual.y == -1);
+
+    // down
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(50, 100));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == 0 and actual.y == 1);
+
+    // up & left
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(0, 0));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == -1 and actual.y == -1);
+
+    // up & right
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(100, 0));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == 1 and actual.y == -1);
+
+    // down & left
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(0, 100));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == -1 and actual.y == 1);
+
+    // down & right
+    actual = findDirectionTo(rl.Vector2.init(50, 50), rl.Vector2.init(100, 100));
+    std.debug.print("findDirection {}\n", .{actual});
+    try expect(actual.x == 1 and actual.y == 1);
+}
