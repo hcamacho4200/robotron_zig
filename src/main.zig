@@ -55,11 +55,11 @@ pub fn main() !void {
     updateScreen(&game, &player);
 
     var actor_master = a.ActorMaster.init();
-    for (0..3) |_| {
+    for (0..40) |_| {
         actor_master.addActor(newActorPlacement(.grunt, game, player, &actor_master, &rng, 400, false));
     }
 
-    for (0..50) |_| {
+    for (0..3) |_| {
         const new_actor = newActorPlacement(.diamond, game, player, &actor_master, &rng, 400, false);
         actor_master.addActor(new_actor);
     }

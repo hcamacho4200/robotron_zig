@@ -24,6 +24,9 @@ var mask_container = ActorContainer.init();
 pub var active_image: ActorImage = undefined;
 var active_mask_image: ActorImage = undefined;
 
+// Establish Random Number Seed
+var rng = std.Random.Xoshiro256.init(1234);
+
 pub const Grunt = struct {
     sprite_position: SpritePosition,
     playfield_height: f32,
@@ -42,7 +45,9 @@ pub const Grunt = struct {
             global_init = true;
         }
 
-        var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = 0, .frames_before_move = 20, .delta_time_total = 0 };
+        const frame_count_random = @as(f32, @floatFromInt(u.generateRandomIntInRange(&rng, 1, 20)));
+
+        var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 20, .delta_time_total = 0 };
         // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = 0, .frames_before_move = 5, .delta_time_total = 0 };
         // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = 0, .frames_before_move = 1, .delta_time_total = 0 };
         new_grunt.scaled_speed[0] = playfield_height / 97;
