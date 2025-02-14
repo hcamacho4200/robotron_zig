@@ -55,6 +55,7 @@
     - need to understand how to up its speed progressively, x number of speeds.
     - the grunt needs to seek the player.  Moving diagonally until it get to the same level and then progressively homing in.
     - top speed is the speed of the player.
+    - had to rework the existing interface code, now properly dispatches
 
     
 

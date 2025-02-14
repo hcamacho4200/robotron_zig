@@ -59,7 +59,7 @@ pub const Player = struct {
 
         player_front_mask_shader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
         std.debug.print("load player shader {}\n", .{player_front_mask_shader});
-        glasses_color_status = g.ColorChangeStatus.init(&[_]g.Color{ g.Color{ .r = 255.0 / 255.0, .g = 0.0, .b = 0.0, .a = 255.0 / 255.0 }, g.robotron_blue, g.robotron_green }, 7);
+        glasses_color_status = g.ColorChangeStatus.init(&[_]g.Color{ g.robotron_red, g.robotron_blue, g.robotron_green }, 7);
 
         // zig fmt: off
         return Player{ .name = "Robotron", .baseSpeed = 0, .scaledSpeed = 0, .position = .{
