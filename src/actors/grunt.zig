@@ -28,6 +28,9 @@ pub const Grunt = struct {
     sprite_position: SpritePosition,
     playfield_height: f32,
     scaled_speed: [4]f32 = undefined,
+    frame_count: f32,
+    frames_before_move: f32,
+    delta_time_total: f32,
 
     pub fn init(x: f32, y: f32, playfield_height: f32) Grunt {
         if (!global_init) {
@@ -39,11 +42,10 @@ pub const Grunt = struct {
             global_init = true;
         }
 
-        var new_grunt = Grunt{
-            .sprite_position = SpritePosition.init(x, y, 50, 50),
-            .playfield_height = playfield_height,
-        };
-        new_grunt.scaled_speed[0] = playfield_height / 10;
+        var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = 0, .frames_before_move = 20, .delta_time_total = 0 };
+        // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = 0, .frames_before_move = 5, .delta_time_total = 0 };
+        // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = 0, .frames_before_move = 1, .delta_time_total = 0 };
+        new_grunt.scaled_speed[0] = playfield_height / 97;
         return new_grunt;
     }
 
@@ -59,12 +61,19 @@ pub const Grunt = struct {
 
     pub fn handleUpdate(self: *Grunt, game: g.Game, player: p.Player, delta_time: f32) void {
         _ = game;
+        if (self.frame_count < self.frames_before_move) {
+            self.frame_count += 1;
+            self.delta_time_total += delta_time;
+            return;
+        }
+
+        self.frame_count = 0;
 
         // determine the direction from grunt the player is
         const direction = u.findDirectionTo(self.sprite_position.center.toVector2(), player.center.toVector2());
 
         // set new position based on delta time
-        const speed = self.scaled_speed[0] * delta_time;
+        const speed = self.scaled_speed[0];
         // const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
         // const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
 
@@ -72,5 +81,6 @@ pub const Grunt = struct {
         const newPosition_y = self.sprite_position.y + (speed * direction.y);
 
         self.setPosition(newPosition_x, newPosition_y);
+        self.delta_time_total = 0;
     }
 };
