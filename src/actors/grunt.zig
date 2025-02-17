@@ -22,8 +22,8 @@ var image_container = ActorContainer.init();
 var mask_container = ActorContainer.init();
 var mask_shader: rl.Shader = undefined;
 
-pub var active_image: ActorImage = undefined;
-var active_mask_image: ActorImage = undefined;
+pub var active_image: *ActorImage = undefined;
+var active_mask_image: *ActorImage = undefined;
 
 pub var color_status: g.ColorChangeStatus = undefined;
 
@@ -40,8 +40,8 @@ pub const Grunt = struct {
 
     pub fn init(x: f32, y: f32, playfield_height: f32) Grunt {
         if (!global_init) {
-            image_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt.png"));
-            mask_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt-mask.png"));
+            image_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt.png", 1));
+            mask_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt-mask.png", 1));
 
             active_image = image_container.getImage(ActorDirection.DOWN);
             active_image.actor_mask.dumpMask();

@@ -48,16 +48,48 @@ pub const ActorImage = struct {
     texture: rl.Texture,
     image: rl.Image,
     actor_mask: ActorMask,
+    frames: f32,
+    width: f32,
+    height: f32,
+    activeFrame: f32,
+    frameBeforeBump: f32,
+    frameBeforeCount: f32,
 
-    pub fn init(texture_path: [*c]const u8) ActorImage {
+    pub fn init(texture_path: [*c]const u8, frames: f32) ActorImage {
         const texture = rl.LoadTexture(texture_path);
         const image = rl.LoadImageFromTexture(texture);
+
+        const width = texture.width;
+        const height = texture.height;
 
         return ActorImage{
             .texture = texture,
             .image = image,
             .actor_mask = ActorMask.init(image),
+            .frames = frames,
+            .width = @as(f32, @floatFromInt(width)) / frames,
+            .height = @as(f32, @floatFromInt(height)),
+            .activeFrame = 0,
+            .frameBeforeBump = 5,
+            .frameBeforeCount = 0,
         };
+    }
+
+    pub fn getFrameRect(self: *@This()) rl.Rectangle {
+        return rl.Rectangle.init(self.activeFrame * self.width, 0, self.width, self.height);
+    }
+
+    pub fn bumpActiveFrame(self: *ActorImage) void {
+        if (self.frameBeforeCount > self.frameBeforeBump) {
+            self.frameBeforeCount = 0;
+            self.activeFrame += 1;
+            if (self.activeFrame > self.frames) {
+                self.activeFrame = 0;
+                std.debug.print("resetting bump\n", .{});
+            }
+            std.debug.print("bumpActiveFrame {} {}\n", .{ self.activeFrame, self.frames });
+        }
+        self.frameBeforeCount += 1;
     }
 };
 
@@ -74,7 +106,7 @@ pub const ActorContainer = struct {
         self.images[@intFromEnum(direction)] = actor_image;
     }
 
-    pub fn getImage(self: *@This(), direction: ActorDirection) ActorImage {
-        return self.images[@intFromEnum(direction)];
+    pub fn getImage(self: *@This(), direction: ActorDirection) *ActorImage {
+        return &self.images[@intFromEnum(direction)];
     }
 };

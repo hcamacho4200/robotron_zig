@@ -120,7 +120,7 @@ pub const ActorMaster = struct {
 
     const CollisionResult = struct { actor: *Actor, overlap: u.Rectangle, pixel: bool };
 
-    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle, test_image: ai.ActorImage, rectange_only: bool) ?CollisionResult {
+    pub fn checkCollision(self: *@This(), rect_test: u.Rectangle, test_image: *ai.ActorImage, rectange_only: bool) ?CollisionResult {
         for (self.actors[0..]) |*actor| {
             var rect_actor: u.Rectangle = undefined;
             var actor_mask: ai.ActorMask = undefined;

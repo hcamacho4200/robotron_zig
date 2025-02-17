@@ -12,7 +12,7 @@ const ActorImage = @import("image.zig").ActorImage;
 const SpriteInterface = @import("interfaces.zig").SpriteInterface;
 const SpritePosition = @import("interfaces.zig").SpritePosition;
 
-pub var actor_image: ActorImage = undefined;
+pub var actor_image: *ActorImage = undefined;
 
 pub const Diamond = struct {
     sprite_position: SpritePosition,

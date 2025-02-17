@@ -39,8 +39,8 @@ pub fn main() !void {
     // boarder shader
     const player_front_mask_shader = rl.LoadShader(null, "resources/shaders/player-down-crop.fs");
 
-    const diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png");
-    a_diamond.actor_image = diamond_actor_image;
+    var diamond_actor_image = ai.ActorImage.init("./resources/textures/sprite-diamond.png", 1);
+    a_diamond.actor_image = &diamond_actor_image;
     std.debug.print("{}", .{diamond_actor_image});
     a_diamond.actor_image.actor_mask.dumpMask();
 
@@ -82,8 +82,8 @@ pub fn main() !void {
         // Player Collision with Actors
         var player_collision = false;
         var player_overlap: u.Rectangle = undefined;
-        const rect_test = u.Rectangle.init(player.position.x, player.position.y, player.dimensions.width, player.dimensions.height);
-        const actor_collided_with = actor_master.checkCollision(rect_test, p.active_image, false);
+        const rect_test = u.Rectangle.init(player.position.x, player.position.y, p.active_image.width, p.active_image.height);
+        const actor_collided_with = actor_master.checkCollision(rect_test, p.active_image, true);
         if (actor_collided_with) |ao| {
             player_collision = true;
             player_overlap = ao.overlap;
