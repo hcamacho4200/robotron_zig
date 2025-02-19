@@ -9,6 +9,7 @@ const g = @import("game.zig");
 const s = @import("shooting.zig");
 const i = @import("./actors/interfaces.zig");
 
+const ActorBump = @import("./actors/image.zig").ActorBump;
 const ActorImage = @import("./actors/image.zig").ActorImage;
 const ActorDirection = @import("./actors/image.zig").ActorDirection;
 const ActorContainer = @import("./actors/image.zig").ActorContainer;
@@ -38,6 +39,7 @@ pub const Player = struct {
     scaledSpeed: f32,
     dimensions: struct { width: f32, height: f32 },
     shootingMaster: s.ShootingMaster,
+    actorBump: ActorBump,
 
     pub fn init() Player {
         image_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/player-front.png", 4));
@@ -72,7 +74,9 @@ pub const Player = struct {
             .width = active_image.width, 
             .height = active_image.height, 
         }, 
-        .shootingMaster = s.ShootingMaster.init() };
+        .shootingMaster = s.ShootingMaster.init(), 
+        .actorBump = ActorBump.init(4, 5),
+        };
     }
 // zig fmt: on
 
@@ -98,9 +102,7 @@ pub const Player = struct {
         else walkingDirection = s.ShootDirection.IDLE;
 
         if (walkingDirection != s.ShootDirection.IDLE) {
-            active_image.bumpActiveFrame();
-            active_image.bumpActiveFrame();
-            std.debug.print("activeFrame {} ", .{active_image.activeFrame});
+            self.actorBump.bumpActiveFrame();
             self.updatePlayerPosition(game, walkingDirection, deltaTime);
         }
 
@@ -136,7 +138,7 @@ pub const Player = struct {
     /// - draw the player
     /// - enable the various shaders
     pub fn draw(self: *@This(), game: g.Game) void {
-        const frameRec = active_image.getFrameRect();
+        const frameRec = active_image.getFrameRect(self.actorBump.activeFrame);
         var new_color: g.Color = undefined;
 
         rl.DrawRectangleV(game.playerFrame.frameStart, game.playerFrame.frameSize, rl.Color.init(0, 0, 0, 255));

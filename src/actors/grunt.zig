@@ -9,6 +9,7 @@ const p = @import("../player.zig");
 const u = @import("../util.zig");
 
 const ActorInterface = @import("interfaces.zig").ActorInterface;
+const ActorBump = @import("image.zig").ActorBump;
 const ActorImage = @import("image.zig").ActorImage;
 const ActorDirection = @import("image.zig").ActorDirection;
 const ActorContainer = @import("image.zig").ActorContainer;
@@ -37,10 +38,11 @@ pub const Grunt = struct {
     frame_count: f32,
     frames_before_move: f32,
     delta_time_total: f32,
+    actor_bump: ActorBump,
 
     pub fn init(x: f32, y: f32, playfield_height: f32) Grunt {
         if (!global_init) {
-            image_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt.png", 1));
+            image_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt.png", 4));
             mask_container.addImage(ActorDirection.DOWN, ActorImage.init("./resources/textures/grunt-mask.png", 1));
 
             active_image = image_container.getImage(ActorDirection.DOWN);
@@ -57,9 +59,9 @@ pub const Grunt = struct {
 
         const frame_count_random = @as(f32, @floatFromInt(u.generateRandomIntInRange(&rng, 1, 20)));
 
-        var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 20, .delta_time_total = 0 };
-        // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 5, .delta_time_total = 0 };
-        // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 1, .delta_time_total = 0 };
+        var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 20, .delta_time_total = 0, .actor_bump = ActorBump.init(4, 0) };
+        // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 5, .delta_time_total = 0, .actor_bump = ActorBump.init(4, 0) };
+        // var new_grunt = Grunt{ .sprite_position = SpritePosition.init(x, y, 50, 50), .playfield_height = playfield_height, .frame_count = frame_count_random, .frames_before_move = 1, .delta_time_total = 0, .actor_bump = ActorBump.init(4, 0) };
         new_grunt.scaled_speed[0] = playfield_height / 97;
         return new_grunt;
     }
@@ -69,22 +71,17 @@ pub const Grunt = struct {
     }
 
     pub fn handleDraw(self: Grunt) void {
-        const x = self.sprite_position.x;
-        const y = self.sprite_position.y;
+        const frameRec = active_image.getFrameRect(self.actor_bump.activeFrame);
         var new_color: g.Color = undefined;
 
-        const texture_width = @as(f32, @floatFromInt(active_image.texture.width));
-        const texture_height = @as(f32, @floatFromInt(active_image.texture.height));
-
-        const frameRec = rl.Rectangle.init(0.0, 0.0, texture_width, texture_height);
-        rl.DrawTextureV(active_image.texture, rl.Vector2.init(x, y), rl.WHITE);
+        rl.DrawTextureRec(active_image.texture, frameRec, rl.Vector2.init(self.sprite_position.x, self.sprite_position.y), rl.WHITE);
 
         // Setup shader value pass-thru
         new_color = color_status.getNextColor();
         rl.SetShaderValue(mask_shader, rl.GetShaderLocation(mask_shader, "newColor"), &new_color, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4.toCInt());
 
         rl.BeginShaderMode(mask_shader);
-        rl.DrawTextureRec(active_mask_image.texture, frameRec, rl.Vector2.init(x, y), rl.BLANK);
+        rl.DrawTextureRec(active_mask_image.texture, frameRec, rl.Vector2.init(self.sprite_position.x, self.sprite_position.y), rl.BLANK);
         rl.EndShaderMode();
     }
 
@@ -96,6 +93,8 @@ pub const Grunt = struct {
             return;
         }
 
+        self.actor_bump.bumpActiveFrame();
+
         self.frame_count = 0;
 
         // determine the direction from grunt the player is
@@ -103,9 +102,6 @@ pub const Grunt = struct {
 
         // set new position based on delta time
         const speed = self.scaled_speed[0];
-        // const width: f32 = game.playerFrame.frameStart.x + game.playerFrame.frameSize.x;
-        // const height: f32 = game.playerFrame.frameStart.y + game.playerFrame.frameSize.y;
-
         const newPosition_x = self.sprite_position.x + (speed * direction.x);
         const newPosition_y = self.sprite_position.y + (speed * direction.y);
 

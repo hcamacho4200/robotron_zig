@@ -48,12 +48,8 @@ pub const ActorImage = struct {
     texture: rl.Texture,
     image: rl.Image,
     actor_mask: ActorMask,
-    frames: f32,
     width: f32,
     height: f32,
-    activeFrame: f32,
-    frameBeforeBump: f32,
-    frameBeforeCount: f32,
 
     pub fn init(texture_path: [*c]const u8, frames: f32) ActorImage {
         const texture = rl.LoadTexture(texture_path);
@@ -66,20 +62,32 @@ pub const ActorImage = struct {
             .texture = texture,
             .image = image,
             .actor_mask = ActorMask.init(image),
-            .frames = frames,
             .width = @as(f32, @floatFromInt(width)) / frames,
             .height = @as(f32, @floatFromInt(height)),
+        };
+    }
+
+    pub fn getFrameRect(self: *@This(), frame: f32) rl.Rectangle {
+        return rl.Rectangle.init(frame * self.width, 0, self.width, self.height);
+    }
+};
+
+pub const ActorBump = struct {
+    frames: f32,
+    activeFrame: f32,
+    frameBeforeBump: f32,
+    frameBeforeCount: f32,
+
+    pub fn init(total_frames: f32, frames_before_bump: f32) ActorBump {
+        return ActorBump{
+            .frames = total_frames,
             .activeFrame = 0,
-            .frameBeforeBump = 5,
+            .frameBeforeBump = frames_before_bump,
             .frameBeforeCount = 0,
         };
     }
 
-    pub fn getFrameRect(self: *@This()) rl.Rectangle {
-        return rl.Rectangle.init(self.activeFrame * self.width, 0, self.width, self.height);
-    }
-
-    pub fn bumpActiveFrame(self: *ActorImage) void {
+    pub fn bumpActiveFrame(self: *ActorBump) void {
         if (self.frameBeforeCount > self.frameBeforeBump) {
             self.frameBeforeCount = 0;
             self.activeFrame += 1;
