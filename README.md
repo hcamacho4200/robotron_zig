@@ -6,7 +6,7 @@ Learning Zig, making a Robotron 2084 clone to learn the language.
 
 - install zig
 ```
-brew install zig
+brew install zig -- requires zig 0.13.0, 0.14.0 is the current version, perform manual installation
 ```
 
 - clone raylib into the repo:
